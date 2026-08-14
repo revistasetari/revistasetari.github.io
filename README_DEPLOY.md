@@ -35,3 +35,7 @@ O arquivo `crossref/deposit-template.xml` já utiliza `revistasetari@gmail.com` 
 ## Contato editorial
 
 **revistasetari@gmail.com**
+
+
+## Editorial Board form
+The page `join-editorial.html` uses FormSubmit to forward submissions to revistasetari@gmail.com. The first live submission triggers a confirmation email; open it and confirm the form before expecting normal delivery.
