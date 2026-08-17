@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 270" role="img" aria-labelledby="title desc">
+<title id="title">SETARI</title>
+<desc id="desc">Science, Engineering, Technology, Applied Research &amp; Innovation</desc>
+<rect width="1120" height="270" fill="#ffffff"/>
+<g transform="translate(22 24)">
+  <path d="M102 8C53 8 14 47 14 96c0 36 20 67 50 82" fill="none" stroke="#07376f" stroke-width="9" stroke-linecap="round"/>
+  <path d="M160 55c24 8 42 29 45 55" fill="none" stroke="#1196a2" stroke-width="8" stroke-linecap="round"/>
+  <g fill="none" stroke="#8a9298" stroke-width="4" opacity=".9">
+    <ellipse cx="111" cy="122" rx="58" ry="65"/>
+    <path d="M54 122h115M111 58c-21 18-31 39-31 64s10 48 31 65M111 58c21 18 31 39 31 64s-10 48-31 65"/>
+  </g>
+  <path d="M31 145a42 42 0 0 1-9-25l-15-4 3-18 16 1a43 43 0 0 1 11-18l-8-14 15-10 10 12a43 43 0 0 1 21-6l4-16 18 3-1 15" fill="none" stroke="#92989c" stroke-width="11" stroke-linecap="square"/>
+  <g fill="none" stroke-linecap="round" stroke-width="6">
+    <path d="M77 120V48" stroke="#1196a2"/><circle cx="77" cy="43" r="8" stroke="#1196a2" fill="#fff"/>
+    <path d="M102 118V27" stroke="#07376f"/><circle cx="102" cy="20" r="8" stroke="#07376f" fill="#fff"/>
+    <path d="M127 118V60" stroke="#07376f"/><circle cx="127" cy="53" r="8" stroke="#07376f" fill="#fff"/>
+  </g>
+  <path d="M18 166C55 205 133 201 188 149c22-21 36-44 39-65" fill="none" stroke="#1196a2" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="205" cy="92" r="13" fill="#1196a2"/>
+  <path d="M62 185c34 20 77 20 112-4" fill="none" stroke="#07376f" stroke-width="10" stroke-linecap="round"/>
+</g>
+<g transform="translate(275 45)">
+  <text x="0" y="105" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="800" letter-spacing="2" fill="#07376f">SETARI</text>
+  <rect x="381" y="120" width="38" height="8" rx="2" fill="#1196a2" transform="skewX(-22)"/>
+  <line x1="0" y1="138" x2="800" y2="138" stroke="#9aa0a4" stroke-width="3"/>
+  <line x1="0" y1="138" x2="385" y2="138" stroke="#1196a2" stroke-width="4"/>
+  <circle cx="810" cy="138" r="7" fill="#1196a2"/>
+  <text x="0" y="180" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400" fill="#2b3034">Science, Engineering, Technology, Applied Research &amp; Innovation</text>
+</g>
+</svg>
