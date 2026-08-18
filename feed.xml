@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>SETARI — Science, Engineering, Technology, Applied Research &amp; Innovation</title>
+  <id>https://revistasetari.github.io/</id>
+  <link href="https://revistasetari.github.io/feed.xml" rel="self" />
+  <link href="https://revistasetari.github.io/" />
+  <updated>2026-08-18T17:50:00Z</updated>
+  <author><name>SETARI Editorial Office</name><email>revistasetari@gmail.com</email></author>
+  <entry><title>SETARI — Journal launch</title><id>https://revistasetari.github.io/</id><link href="https://revistasetari.github.io/"/><updated>2026-08-18T17:50:00Z</updated><summary>International open-access journal in science, engineering, technology, applied research and innovation.</summary></entry>
+  <entry><title>Call for Papers 2026</title><id>https://revistasetari.github.io/call-for-papers.html</id><link href="https://revistasetari.github.io/call-for-papers.html"/><updated>2026-08-18T17:50:00Z</updated><summary>Inaugural call for original articles, reviews and applied technological research.</summary></entry>
+  <entry><title>Join the SETARI Editorial Board</title><id>https://revistasetari.github.io/join-editorial.html</id><link href="https://revistasetari.github.io/join-editorial.html"/><updated>2026-08-18T17:50:00Z</updated><summary>Call for Associate Editors, Editorial Board members and Reviewers.</summary></entry>
+</feed>

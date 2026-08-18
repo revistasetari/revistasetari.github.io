@@ -1,0 +1,22 @@
+SETARI — PACOTE FINAL PARA GITHUB
+Data: 18/08/2026
+
+Este pacote consolida:
+- nova imagem de capa/banner da SETARI;
+- chamada para participação no Corpo Editorial;
+- formulário de interesse encaminhado para revistasetari@gmail.com;
+- página de confirmação do formulário;
+- SEO técnico;
+- robots.txt;
+- sitemap.xml;
+- feed.xml;
+- metadados canônicos/Open Graph;
+- estrutura Google Scholar para artigos;
+- IndexNow via GitHub Actions;
+- arquivos institucionais e templates de download.
+
+PUBLICAÇÃO:
+Envie TODO o conteúdo desta pasta para a RAIZ do repositório:
+revistasetari/revistasetari.github.io
+
+Confirme a substituição dos arquivos existentes e faça Commit changes.
