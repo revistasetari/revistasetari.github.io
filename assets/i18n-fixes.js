@@ -4,6 +4,10 @@ const set=(el,pt,en)=>{if(el)el.textContent=lang()==='en'?en:pt};
 function apply(){
   const l=lang();
   document.documentElement.lang=l==='en'?'en':'pt-BR';
+  // Remove o aviso introdutório da página do Corpo Editorial.
+  if(location.pathname.endsWith('/editorial.html')||location.pathname.endsWith('editorial.html')){
+    document.querySelectorAll('.eb .note').forEach(e=>e.remove());
+  }
   // Rodapé: traduções por contexto
   document.querySelectorAll('.footer a[href$="about.html"]').forEach(e=>set(e,'Sobre','About'));
   document.querySelectorAll('.footer a[href$="editorial.html"]').forEach(e=>set(e,'Corpo Editorial','Editorial Board'));
