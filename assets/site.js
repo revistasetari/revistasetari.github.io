@@ -46,11 +46,6 @@ function loadPortalAudit(){
   if(document.querySelector('script[data-setari-portal-audit]'))return;
   const s=document.createElement('script');s.type='module';s.src=assetPath('portal-audit.js?v=20260820-1');s.dataset.setariPortalAudit='1';document.head.appendChild(s);
 }
-function loadPortalPublication(){
-  if(!location.pathname.endsWith('/portal.html')&&!location.pathname.endsWith('portal.html'))return;
-  if(document.querySelector('script[data-setari-portal-publication]'))return;
-  const s=document.createElement('script');s.type='module';s.src=assetPath('portal-publication.js?v=20260820-1');s.dataset.setariPortalPublication='1';document.head.appendChild(s);
-}
 function loadInteraction(){
   if(document.querySelector('script[data-setari-interaction]'))return;
   const s=document.createElement('script');s.src=assetPath('interaction.js?v=20260820-1');s.defer=true;s.dataset.setariInteraction='1';document.head.appendChild(s);
@@ -61,5 +56,5 @@ function loadI18n(){
   s.onload=()=>{const f=document.createElement('script');f.src=assetPath('i18n-fixes.js?v=20260820-8');f.defer=true;f.dataset.setariI18nFixes='1';f.onload=()=>{if(window.SETARI_I18N?.apply)window.SETARI_I18N.apply();if(window.SETARI_I18N_FIXES?.apply)window.SETARI_I18N_FIXES.apply();};document.head.appendChild(f)};
   document.head.appendChild(s)
 }
-function boot(){loadMobileCss();ensureBrandLogo();ensurePortalLink();loadEditorialProfiles();loadPortalAuthFlow();loadPortalUserAdmin();loadPortalAudit();loadPortalPublication();loadInteraction();loadI18n()}
+function boot(){loadMobileCss();ensureBrandLogo();ensurePortalLink();loadEditorialProfiles();loadPortalAuthFlow();loadPortalUserAdmin();loadPortalAudit();loadInteraction();loadI18n()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
