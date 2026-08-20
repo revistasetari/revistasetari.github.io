@@ -1,12 +1,56 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const supabase=createClient('https://iqfrakjlabkjxygdiktp.supabase.co','sb_publishable_kntNAWBHQRobiuQmh2xStA_BnCnz0p1',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const $=s=>document.querySelector(s);const lang=()=>localStorage.getItem('setariLang')==='en'?'en':'pt';const t=(pt,en)=>lang()==='en'?en:pt;
-let profiles=[];
-async function loadProfiles(){const {data:{session}}=await supabase.auth.getSession();if(!session)return;const {data}=await supabase.from('profiles').select('id,email,role,active');profiles=data||[];decorate()}
-async function callAdmin(userId,mode){const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error(t('Sessão expirada. Entre novamente.','Session expired. Sign in again.'));const res=await fetch('https://iqfrakjlabkjxygdiktp.supabase.co/functions/v1/editor-user-admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':'sb_publishable_kntNAWBHQRobiuQmh2xStA_BnCnz0p1'},body:JSON.stringify({user_id:userId,mode})});const data=await res.json().catch(()=>({}));if(!res.ok){const err=new Error(data.error||'admin_action_failed');err.data=data;throw err}return data}
-function decorate(){const box=$('#editor-users');if(!box||!profiles.length)return;box.querySelectorAll('.user-row').forEach(row=>{if(row.dataset.adminDecorated)return;const email=row.querySelector('.item-meta span')?.textContent?.trim()||'';const profile=profiles.find(p=>p.email===email);if(!profile||profile.role==='editor_chief')return;row.dataset.adminDecorated='1';const wrap=document.createElement('div');wrap.className='item-actions account-admin-actions';wrap.style.marginTop='.7rem';wrap.innerHTML=`<span style="font-size:.78rem;opacity:.7;margin-right:auto">${profile.active?t('Conta ativa','Active account'):t('Conta desativada','Deactivated account')}</span><button class="btn ghost deactivate-account" type="button" ${profile.active?'':'disabled'}>${t('Desativar','Deactivate')}</button><button class="btn ghost delete-account" type="button">${t('Apagar conta','Delete account')}</button>`;row.appendChild(wrap);
-wrap.querySelector('.deactivate-account').onclick=async()=>{if(!confirm(t(`Desativar a conta ${email}? O usuário perderá o acesso, mas todo o histórico editorial será preservado.`,`Deactivate ${email}? The user will lose access, but all editorial history will be preserved.`)))return;try{await callAdmin(profile.id,'deactivate');alert(t('Conta desativada com sucesso.','Account deactivated successfully.'));await loadProfiles();location.reload()}catch(e){alert(e.message)}};
-wrap.querySelector('.delete-account').onclick=async()=>{if(!confirm(t(`Apagar DEFINITIVAMENTE a conta ${email}? A ação só será autorizada se a conta não possuir submissões, atribuições ou pareceres.`,`PERMANENTLY delete ${email}? This action will only be allowed if the account has no submissions, assignments or reviews.`)))return;try{await callAdmin(profile.id,'delete');alert(t('Conta apagada definitivamente.','Account permanently deleted.'));location.reload()}catch(e){if(e.data?.error==='editorial_history_exists'){const a=e.data.activity||{};const msg=t(`Esta conta possui histórico editorial (${a.submissions||0} submissões, ${a.assignments||0} atribuições, ${a.reviews||0} pareceres). Para preservar o histórico, ela não pode ser apagada. Deseja desativá-la agora?`,`This account has editorial history (${a.submissions||0} submissions, ${a.assignments||0} assignments, ${a.reviews||0} reviews). To preserve the record, it cannot be deleted. Deactivate it now?`);if(confirm(msg)){try{await callAdmin(profile.id,'deactivate');alert(t('Conta desativada e histórico preservado.','Account deactivated and history preserved.'));location.reload()}catch(x){alert(x.message)}}}else if(e.data?.error==='cannot_delete_self'||e.data?.error==='cannot_delete_editor_chief')alert(t('A conta do Editor-Chefe não pode ser apagada por esta função.','The Editor-in-Chief account cannot be deleted using this function.'));else alert(t('Não foi possível executar a ação: ','Could not perform the action: ')+e.message)}}})}
-const mo=new MutationObserver(()=>decorate());async function boot(){const box=$('#editor-users');if(!box){setTimeout(boot,500);return}mo.observe(box,{childList:true,subtree:true});await loadProfiles()}
-window.addEventListener('setari:lang',()=>{document.querySelectorAll('#editor-users .user-row').forEach(r=>{delete r.dataset.adminDecorated;r.querySelector('.account-admin-actions')?.remove()});decorate()});
+(()=>{
+const PROJECT='iqfrakjlabkjxygdiktp';
+const APIKEY='sb_publishable_kntNAWBHQRobiuQmh2xStA_BnCnz0p1';
+const ENDPOINT='https://iqfrakjlabkjxygdiktp.supabase.co/functions/v1/editor-user-admin';
+const lang=()=>localStorage.getItem('setariLang')==='en'?'en':'pt';
+const t=(pt,en)=>lang()==='en'?en:pt;
+function token(){
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i)||'';
+    if(!k.includes(PROJECT)||!k.includes('auth-token'))continue;
+    try{const v=JSON.parse(localStorage.getItem(k)||'{}');return v?.access_token||v?.currentSession?.access_token||v?.session?.access_token||null}catch{}
+  }
+  return null;
+}
+function feedback(msg,type='ok'){
+  window.SETARI_FEEDBACK?.toast?.(msg,type);
+  const a=document.getElementById('portal-alert');
+  if(a){a.textContent=msg;a.className='portal-alert '+type;a.hidden=false;setTimeout(()=>a.hidden=true,5500)}
+}
+async function call(email,mode){
+  const access=token();if(!access)throw new Error(t('Sessão não encontrada. Saia e entre novamente.','Session not found. Sign out and sign in again.'));
+  const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${access}`,'apikey':APIKEY},body:JSON.stringify({email,mode})});
+  const data=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(data.error||'admin_action_failed');e.data=data;throw e}return data;
+}
+function addActions(row){
+  if(row.dataset.accountActions==='1')return;
+  const role=row.querySelector('select')?.value||'';
+  if(role==='editor_chief')return;
+  const email=row.querySelector('.item-meta span')?.textContent?.trim()||'';
+  if(!email||!email.includes('@'))return;
+  row.dataset.accountActions='1';
+  const wrap=document.createElement('div');wrap.className='item-actions account-admin-actions';wrap.style.marginTop='.65rem';
+  wrap.innerHTML=`<button class="btn ghost deactivate-account" type="button">${t('Desativar conta','Deactivate account')}</button><button class="btn ghost delete-account" type="button">${t('Apagar conta','Delete account')}</button>`;
+  row.appendChild(wrap);
+  wrap.querySelector('.deactivate-account').onclick=async()=>{
+    if(!confirm(t(`Desativar a conta ${email}? O acesso será bloqueado e o histórico será preservado.`,`Deactivate ${email}? Access will be blocked and history preserved.`)))return;
+    const b=wrap.querySelector('.deactivate-account');b.disabled=true;
+    try{await call(email,'deactivate');feedback(t('Conta desativada com sucesso.','Account deactivated successfully.'),'ok');setTimeout(()=>location.reload(),900)}catch(e){feedback(t('Não foi possível desativar: ','Could not deactivate: ')+e.message,'error');b.disabled=false}
+  };
+  wrap.querySelector('.delete-account').onclick=async()=>{
+    if(!confirm(t(`Apagar definitivamente a conta ${email}? Isso só será permitido se não houver histórico editorial.`,`Permanently delete ${email}? This is allowed only if there is no editorial history.`)))return;
+    const b=wrap.querySelector('.delete-account');b.disabled=true;
+    try{await call(email,'delete');feedback(t('Conta apagada definitivamente.','Account permanently deleted.'),'ok');setTimeout(()=>location.reload(),900)}catch(e){
+      if(e.data?.error==='editorial_history_exists'){
+        const a=e.data.activity||{};
+        const msg=t(`A conta possui histórico (${a.submissions||0} submissões, ${a.assignments||0} atribuições, ${a.reviews||0} pareceres) e não pode ser apagada. Deseja desativá-la?`,`The account has history (${a.submissions||0} submissions, ${a.assignments||0} assignments, ${a.reviews||0} reviews) and cannot be deleted. Deactivate it instead?`);
+        if(confirm(msg)){try{await call(email,'deactivate');feedback(t('Conta desativada; histórico preservado.','Account deactivated; history preserved.'),'ok');setTimeout(()=>location.reload(),900)}catch(x){feedback(x.message,'error')}}
+      }else feedback(t('Não foi possível apagar: ','Could not delete: ')+e.message,'error');
+      b.disabled=false;
+    }
+  };
+}
+function decorate(){const box=document.getElementById('editor-users');if(!box||box.closest('[hidden]'))return false;const rows=[...box.querySelectorAll('.user-row')];if(!rows.length)return false;rows.forEach(addActions);return true}
+function boot(){let tries=0;const timer=setInterval(()=>{tries++;if(decorate()||tries>=30)clearInterval(timer)},500)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
