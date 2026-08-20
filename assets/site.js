@@ -41,11 +41,15 @@ function loadPortalUserAdmin(){
   if(document.querySelector('script[data-setari-portal-user-admin]'))return;
   const s=document.createElement('script');s.type='module';s.src=assetPath('portal-user-admin.js?v=20260820-2');s.dataset.setariPortalUserAdmin='1';document.head.appendChild(s);
 }
+function loadInteraction(){
+  if(document.querySelector('script[data-setari-interaction]'))return;
+  const s=document.createElement('script');s.src=assetPath('interaction.js?v=20260820-1');s.defer=true;s.dataset.setariInteraction='1';document.head.appendChild(s);
+}
 function loadI18n(){
   if(document.querySelector('script[data-setari-i18n-v2]'))return;
   const s=document.createElement('script');s.src=assetPath('i18n-v2.js?v=20260820-8');s.defer=true;s.dataset.setariI18nV2='1';
   s.onload=()=>{const f=document.createElement('script');f.src=assetPath('i18n-fixes.js?v=20260820-8');f.defer=true;f.dataset.setariI18nFixes='1';f.onload=()=>{if(window.SETARI_I18N?.apply)window.SETARI_I18N.apply();if(window.SETARI_I18N_FIXES?.apply)window.SETARI_I18N_FIXES.apply();};document.head.appendChild(f)};
   document.head.appendChild(s)
 }
-function boot(){loadMobileCss();ensureBrandLogo();ensurePortalLink();loadEditorialProfiles();loadPortalAuthFlow();loadPortalUserAdmin();loadI18n()}
+function boot(){loadMobileCss();ensureBrandLogo();ensurePortalLink();loadEditorialProfiles();loadPortalAuthFlow();loadPortalUserAdmin();loadInteraction();loadI18n()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
