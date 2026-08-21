@@ -1,0 +1,3 @@
+SETARI GitHub Pages refresh
+Date: 2026-08-21
+Purpose: force a fresh GitHub Pages deployment after static editorial board updates.
