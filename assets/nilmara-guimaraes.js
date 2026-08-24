@@ -1,7 +1,7 @@
 (()=>{
-const BUILD='20260824-1817';
+const BUILD='20260824-1842';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
-const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro.jpg?v=${BUILD}`;
+const LUIZ_FERNANDO_PHOTO=`https://raw.githubusercontent.com/revistasetari/revistasetari.github.io/main/assets/luiz-fernando-ribas-monteiro.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
 
 function ensurePhotoFor(name,src){
