@@ -1,5 +1,5 @@
 (()=>{
-const BUILD='20260824-1655';
+const BUILD='20260824-1817';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
 const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
@@ -51,6 +51,14 @@ function showDenisePhoto(){ensurePhotoFor('Denise Stolle da Luz Weiss',DENISE_LO
 function showLuizPhoto(){ensurePhotoFor('Luiz Fernando Ribas Monteiro',LUIZ_FERNANDO_PHOTO);}
 function showWeslleyPhoto(){ensurePhotoFor('Weslley Luiz da Silva Assis',WESLLEY_PHOTO);}
 
+function keepLuizOnlyAsReviewer(){
+ document.querySelectorAll('.eb article').forEach(article=>{
+  const h=article.querySelector('h3');
+  if(!h||h.textContent.trim()!=='Luiz Fernando Ribas Monteiro')return;
+  if(!article.closest('.reviewers'))article.remove();
+ });
+}
+
 function updateLeonardoQualification(){
  const pt='Engenheiro Eletricista. Mestre em Engenharia Mecânica, na área de Automação. Doutor em Engenharia Elétrica pela Universidade Federal de Itajubá (UNIFEI). Pós-Doutorado em Políticas Públicas, na área de Cidades Inteligentes, pela Escola Nacional de Administração Pública (ENAP). Professor efetivo do IFRJ e docente permanente do Programa de Pós-Graduação em Montagem Industrial (PPGMI) da UFF.';
  const en='Electrical Engineer. MSc in Mechanical Engineering, focused on Automation. PhD in Electrical Engineering from the Federal University of Itajubá (UNIFEI). Postdoctoral research in Public Policy, focused on Smart Cities, at the National School of Public Administration (ENAP). Professor at IFRJ and permanent faculty member of the Graduate Program in Industrial Assembly (PPGMI) at UFF.';
@@ -83,11 +91,13 @@ function addLuizReviewer(){
 
 function applyPageFixes(){
  fixEditorialPhotoPresentation();
+ keepLuizOnlyAsReviewer();
  showDenisePhoto();
  showWeslleyPhoto();
  updateLeonardoQualification();
  addLuizReviewer();
  showLuizPhoto();
+ keepLuizOnlyAsReviewer();
 }
 
 const s=document.createElement('script');
