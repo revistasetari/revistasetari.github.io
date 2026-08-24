@@ -1,13 +1,21 @@
 (()=>{
-const PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgwKCA0MCwwPDg0QFCIWFBISFCkdHxgiMSszMjArLy42PE1CNjlJOi4vQ1xESVBSV1dXNEFfZl5UZU1VV1P/2wBDAQ4PDxQSFCcWFidTNy83U1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1P/wAARCABcACoDASIAAhEBAxEB/8QAGgAAAwEBAQEAAAAAAAAAAAAAAwUHBgQBAP/EADQQAAIBAwIEBAQEBgMAAAAAAAECAwAEEQUhBhITMSJBUWEycZHBFCNCgQcVUmKhsaLR8P/EABgBAQEBAQEAAAAAAAAAAAAAAAMBAgQA/8QAHREAAgMBAQADAAAAAAAAAAAAAAECAxExISIyQv/aAAwDAQACEQMRAD8Ap1Dnnjt4jJMwVB3JoOo3i2Vo8rEA48OfWsrHHqesWhlmuCilsoDt++KjedKk3wcS8V6ZDP0pHlU+pjO33pvbXMN3CJbeVZYz2ZTmplrXDd1bwvcpOJCPE2e9K9I1260m9WWB9j8aH4X9QaqyS1HnFrpYLuMSWsqsNippJLp10ZXKXEoTJ5QG2xTPS9St9Y01bm3PhcYZT3U+YNDjnIjUFtwBUZkRccuXaCAMRjDbH3p1GY0iSNWXwqByg70k4vz/ADK2GOYlkAHtzUeC3uzqiymOFIsHnAG/tWLOD1guIrmBbKWAygSOuyjcmpdOeWVSNvEapuo2Mt08qxuVZgRtsRU41e2NtK6M2SrVaWswtqZqv4c6o0GrvZM35VypwPRhuP8AGa3rWBLEiRgM+lRKzvnsNQt7qI+OJg4+tW+G7nlgjkWNOV1DDf1FJIBirjKPpJZX2M9CYc3yroe7V7gcrhVceD+7PpReKSraJPGV5i4+m/f/AN61meE9YilYaddMBPGPyWb9Y9PmKKxatGreDC8kltmMziU4O2FqfcWFlv3DjBbBPyJJ+9Um/QLG8ksmcDbNTTiJvxEskp8yMH2rNX2Et4J2G2P7ao+mcQPHpdonV+GFB/xFTdj4VPvXwuZUHKpOBsNzXS1pytF71e369pIp7PGUz6E4IP1FRfUg6XTDJRlbYg4KMKt93eQWsbGV17Hw53NRjiDD6lcOvws3Nt5ZrKKjQ6PcvqFgjTuzsNmyc70o4giHVMQGxxXTwuXjhkwCQT2oF8Xub+Z0HMRghfke1CvJMd+xRnJEPJgDcN/3Qem/9J+lNp4A08gT4X3X/f3oPIw26jDHlk7U2hYUrWZxJPJCMAqpJwMb1i9ShHWMnKCGwu1NdRvW/Ey8p+NXy37UlluerjDeIDI2/b71I8K+mk4biVLUquDt3pddRm11BsjYScpHtnIP0zTPhqNoreVXByGwPkdx/uvdeti466BdsBiTuR5Vz788F/IgmiQX2U7dX7ZNOItLV4kfpg8yg0rsFa7vsd+U55j51tUXCKAmwFWyWeEitMVMwdXbm8RHal1kFaaBt9tsV0HZJBj9J38/WvdHiVr+JSMgAtj3p1wJ9NpaQ9FkYDCyoAT7jt/iiSWcdzmOYEqdjvXHpd3M88sDtzRpkqCO2O1M1J6tcs4uLGi1JaeWeg29kxaIbHffzrvESgYwK5tUvJbWyjaLlyzBTkeVBF5Lgbj6VY1ufumJ2qHmH//Z';
-function addNilmara(){
- const list=document.querySelector('.reviewers'); if(!list) return;
- if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Nilmara Almeida Guimarães')) return;
- const article=document.createElement('article'); article.className='rev';
- article.innerHTML=`<img src="${PHOTO}" alt="Nilmara Almeida Guimarães"><div><span class="role">Reviewer · Parecerista</span><h3>Nilmara Almeida Guimarães</h3><p>Instituto Federal de Educação, Ciência e Tecnologia do Rio de Janeiro (IFRJ) · Brasil</p><p data-pt="Metrologia · Qualidade · Inovação" data-en="Metrology · Quality · Innovation">Metrologia · Qualidade · Inovação</p></div><div class="links"><a href="http://lattes.cnpq.br/8713579950615464" target="_blank">Lattes</a></div>`;
- list.appendChild(article);
- if(window.SETARI_I18N?.apply) window.SETARI_I18N.apply();
- if(window.SETARI_I18N_FIXES?.apply) window.SETARI_I18N_FIXES.apply();
+function showDenisePhoto(){
+ document.querySelectorAll('.eb article').forEach(article=>{
+  const h=article.querySelector('h3');
+  if(!h||h.textContent.trim()!=='Denise Stolle da Luz Weiss')return;
+  const old=[...article.children].find(el=>el.classList&&el.classList.contains('mono'));
+  if(!old)return;
+  const img=document.createElement('img');
+  img.src='assets/denise-stolle-da-luz-weiss.svg?v=20260824-1';
+  img.alt='Denise Stolle da Luz Weiss';
+  if(article.classList.contains('card'))img.className='photo';
+  old.replaceWith(img);
+ });
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',addNilmara); else addNilmara();
+const s=document.createElement('script');
+s.src='assets/nilmara-guimaraes-original.js?v=20260821-2012';
+s.async=false;
+s.onload=showDenisePhoto;
+document.head.appendChild(s);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showDenisePhoto);else showDenisePhoto();
 })();
