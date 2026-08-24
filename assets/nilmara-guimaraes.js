@@ -1,7 +1,7 @@
 (()=>{
-const BUILD='20260824-2020';
+const BUILD='20260824-2025';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
-const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro-v2.jpg?v=${BUILD}`;
+const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
 
 function ensurePhotoFor(name,src){
