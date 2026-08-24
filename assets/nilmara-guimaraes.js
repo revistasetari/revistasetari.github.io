@@ -6,7 +6,7 @@ function showDenisePhoto(){
   const old=[...article.children].find(el=>el.classList&&el.classList.contains('mono'));
   if(!old)return;
   const img=document.createElement('img');
-  img.src='assets/denise-stolle-da-luz-weiss.svg?v=20260824-1';
+  img.src='assets/denise-stolle-da-luz-weiss.jpg?v=20260824-2';
   img.alt='Denise Stolle da Luz Weiss';
   if(article.classList.contains('card'))img.className='photo';
   old.replaceWith(img);
