@@ -1,6 +1,6 @@
 (()=>{
-const DENISE_RAW='https://raw.githubusercontent.com/revistasetari/revistasetari.github.io/main/assets/denise-stolle-da-luz-weiss.jpg?v=20260824-1101';
-const DENISE_LOCAL='assets/denise-stolle-da-luz-weiss.jpg?v=20260824-1101';
+const DENISE_RAW='https://raw.githubusercontent.com/revistasetari/revistasetari.github.io/main/assets/denise-stolle-da-luz-weiss.jpg?v=20260824-1538';
+const DENISE_LOCAL='assets/denise-stolle-da-luz-weiss.jpg?v=20260824-1538';
 function showDenisePhoto(){
  document.querySelectorAll('.eb article').forEach(article=>{
   const h=article.querySelector('h3');
@@ -37,9 +37,23 @@ function updateLeonardoQualification(){
   qual.textContent=localStorage.getItem('setariLang')==='en'?en:pt;
  });
 }
-function applyPageFixes(){showDenisePhoto();updateLeonardoQualification();}
+function addLuizReviewer(){
+ const list=document.querySelector('.reviewers');
+ if(!list) return;
+ if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Luiz Fernando Ribas Monteiro')) return;
+ const article=document.createElement('article');
+ article.className='rev';
+ article.innerHTML=`<div class="mono">LFR</div><div><span class="role" data-pt="Parecerista" data-en="Reviewer">Parecerista</span><h3>Luiz Fernando Ribas Monteiro</h3><p>Instituto Federal de Educação, Ciência e Tecnologia de São Paulo (IFSP) · Brasil</p><p data-pt="Redes Inteligentes · Microrredes · Planejamento e Otimização de Sistemas Elétricos de Potência · Inteligência Artificial · Controle · Segurança Cibernética" data-en="Smart Grids · Microgrids · Power System Planning and Optimization · Artificial Intelligence · Control · Cybersecurity">Redes Inteligentes · Microrredes · Planejamento e Otimização de Sistemas Elétricos de Potência · Inteligência Artificial · Controle · Segurança Cibernética</p></div><div class="links"><a href="https://orcid.org/0009-0003-1668-6414" target="_blank" rel="noopener">ORCID</a><a href="https://www.webofscience.com/wos/author/record/ITR-8588-2023" target="_blank" rel="noopener">Web of Science</a><a href="https://scholar.google.com/citations?user=22PEl5wAAAAJ&hl=pt-BR&oi=ao" target="_blank" rel="noopener">Google Scholar</a><a href="http://lattes.cnpq.br/0794752062606721" target="_blank" rel="noopener">Lattes</a></div>`;
+ list.appendChild(article);
+ const lang=localStorage.getItem('setariLang')==='en'?'en':'pt';
+ article.querySelectorAll('[data-pt][data-en]').forEach(el=>{el.textContent=lang==='en'?el.dataset.en:el.dataset.pt;});
+ [...list.querySelectorAll(':scope>article.rev')]
+   .sort((a,b)=>(a.querySelector('h3')?.textContent||'').localeCompare((b.querySelector('h3')?.textContent||''),'pt-BR',{sensitivity:'base'}))
+   .forEach(x=>list.appendChild(x));
+}
+function applyPageFixes(){showDenisePhoto();updateLeonardoQualification();addLuizReviewer();}
 const s=document.createElement('script');
-s.src='assets/nilmara-guimaraes-original.js?v=20260824-1101';
+s.src='assets/nilmara-guimaraes-original.js?v=20260824-1538';
 s.async=false;
 s.onload=applyPageFixes;
 document.head.appendChild(s);
