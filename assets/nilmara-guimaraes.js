@@ -1,5 +1,5 @@
 (()=>{
-const BUILD='20260824-2025';
+const BUILD='20260824-2038';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
 const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
@@ -31,6 +31,7 @@ function fixEditorialPhotoPresentation(){
  .eb .grid .card .photo{width:146px!important;height:220px!important;min-height:220px!important;max-height:220px!important;object-fit:cover!important;object-position:center top!important;padding:0!important;margin:14px 0 14px 14px!important;align-self:start!important;border-radius:10px!important;background:#f4f8f7!important;box-sizing:border-box!important;box-shadow:inset 0 0 0 1px #e2ebeb!important}
  .eb .reviewers .rev{grid-template-columns:100px minmax(0,1fr) auto!important;align-items:start!important}
  .eb .reviewers .rev>img,.eb .reviewers .rev>.mono{width:100px!important;height:118px!important;min-height:118px!important;max-height:118px!important;object-fit:cover!important;object-position:center top!important;padding:0!important;margin:0!important;border-radius:8px!important;background:#f4f8f7!important;box-sizing:border-box!important}
+ .eb .reviewers .rev>img[alt="Luiz Fernando Ribas Monteiro"]{object-fit:contain!important;object-position:center center!important;padding:3px!important;background:#f4f8f7!important}
  @media(max-width:900px){
    .eb .reviewers .rev{grid-template-columns:88px minmax(0,1fr)!important}
    .eb .reviewers .rev>img,.eb .reviewers .rev>.mono{width:88px!important;height:104px!important;min-height:104px!important;max-height:104px!important}
@@ -41,6 +42,7 @@ function fixEditorialPhotoPresentation(){
    .eb .grid .card .photo{width:min(240px,calc(100% - 28px))!important;height:300px!important;min-height:300px!important;max-height:300px!important;margin:14px auto 0!important;padding:0!important;object-fit:cover!important;object-position:center top!important}
    .eb .reviewers .rev{grid-template-columns:74px minmax(0,1fr)!important;gap:.75rem!important}
    .eb .reviewers .rev>img,.eb .reviewers .rev>.mono{width:74px!important;height:88px!important;min-height:88px!important;max-height:88px!important;padding:0!important}
+   .eb .reviewers .rev>img[alt="Luiz Fernando Ribas Monteiro"]{object-fit:contain!important;object-position:center center!important;padding:2px!important}
    .eb .reviewers .rev .links{grid-column:1/-1!important}
  }
  `;
