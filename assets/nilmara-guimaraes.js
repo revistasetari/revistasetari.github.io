@@ -1,5 +1,5 @@
 (()=>{
-const BUILD='20260824-2118';
+const BUILD='20260904-1904';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
 const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
@@ -94,6 +94,21 @@ function addLuizReviewer(){
  showLuizPhoto();
 }
 
+function addLucianaReviewer(){
+ const list=document.querySelector('.reviewers');
+ if(!list)return;
+ if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Luciana Maria Margoti'))return;
+ const article=document.createElement('article');
+ article.className='rev';
+ article.innerHTML=`<div class="mono" aria-label="Luciana Maria Margoti">LMM</div><div><span class="role" data-pt="Parecerista" data-en="Reviewer">Parecerista</span><h3>Luciana Maria Margoti</h3><p>Fundação Presidente Antônio Carlos (FUPAC/UNIPAC) · Brasil</p><p data-pt="Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions." data-en="Coordinator and professor. MSc in Electrical Engineering from the Federal University of São João del-Rei (UFSJ), in a UFSJ/CEFET-MG program. BASis evaluator since 2019 and reviewer for IEEE Latin America Transactions.">Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions.</p><p data-pt="Engenharia Elétrica · Modelagem e Controle · Redes Neurais" data-en="Electrical Engineering · Modeling and Control · Neural Networks">Engenharia Elétrica · Modelagem e Controle · Redes Neurais</p></div><div class="links"><a href="http://lattes.cnpq.br/0604873632052194" target="_blank" rel="noopener">Lattes</a></div>`;
+ list.appendChild(article);
+ const lang=localStorage.getItem('setariLang')==='en'?'en':'pt';
+ article.querySelectorAll('[data-pt][data-en]').forEach(el=>{el.textContent=lang==='en'?el.dataset.en:el.dataset.pt;});
+ [...list.querySelectorAll(':scope>article.rev')]
+   .sort((a,b)=>(a.querySelector('h3')?.textContent||'').localeCompare((b.querySelector('h3')?.textContent||''),'pt-BR',{sensitivity:'base'}))
+   .forEach(x=>list.appendChild(x));
+}
+
 function applyPageFixes(){
  fixEditorialPhotoPresentation();
  keepLuizOnlyAsReviewer();
@@ -101,6 +116,7 @@ function applyPageFixes(){
  showWeslleyPhoto();
  updateLeonardoQualification();
  addLuizReviewer();
+ addLucianaReviewer();
  showLuizPhoto();
  keepLuizOnlyAsReviewer();
 }
