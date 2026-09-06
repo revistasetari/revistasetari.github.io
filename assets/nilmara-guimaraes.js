@@ -1,8 +1,9 @@
 (()=>{
-const BUILD='20260904-1920';
+const BUILD='20260906-1018';
 const DENISE_LOCAL=`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`;
-const LUIZ_FERNANDO_PHOTO='data:image/jpeg;base64,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';
+const LUIZ_FERNANDO_PHOTO=`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`;
 const WESLLEY_PHOTO=`assets/weslley-luiz-da-silva-assis.jpg?v=${BUILD}`;
+const LUCIANA_PHOTO=`assets/luciana-maria-margoti.svg?v=${BUILD}`;
 
 function ensurePhotoFor(name,src){
  document.querySelectorAll('.eb article').forEach(article=>{
@@ -34,6 +35,7 @@ function fixEditorialPhotoPresentation(){
  .eb .reviewers .rev{grid-template-columns:100px minmax(0,1fr) auto!important;align-items:start!important}
  .eb .reviewers .rev>img,.eb .reviewers .rev>.mono{width:100px!important;height:118px!important;min-height:118px!important;max-height:118px!important;object-fit:cover!important;object-position:center top!important;padding:0!important;margin:0!important;border-radius:8px!important;background:#f4f8f7!important;box-sizing:border-box!important}
  .eb .reviewers .rev>img[alt="Luiz Fernando Ribas Monteiro"]{object-fit:contain!important;object-position:center center!important;padding:3px!important;background:#f4f8f7!important}
+ .eb .reviewers .rev>img[alt="Luciana Maria Margoti"]{object-fit:cover!important;object-position:center top!important;padding:0!important;background:#f4f8f7!important}
  @media(max-width:900px){
    .eb .reviewers .rev{grid-template-columns:88px minmax(0,1fr)!important}
    .eb .reviewers .rev>img,.eb .reviewers .rev>.mono{width:88px!important;height:104px!important;min-height:104px!important;max-height:104px!important}
@@ -55,6 +57,7 @@ function fixEditorialPhotoPresentation(){
 function showDenisePhoto(){ensurePhotoFor('Denise Stolle da Luz Weiss',DENISE_LOCAL);}
 function showLuizPhoto(){ensurePhotoFor('Luiz Fernando Ribas Monteiro',LUIZ_FERNANDO_PHOTO);}
 function showWeslleyPhoto(){ensurePhotoFor('Weslley Luiz da Silva Assis',WESLLEY_PHOTO);}
+function showLucianaPhoto(){ensurePhotoFor('Luciana Maria Margoti',LUCIANA_PHOTO);}
 
 function keepLuizOnlyAsReviewer(){
  document.querySelectorAll('.eb article').forEach(article=>{
@@ -78,9 +81,17 @@ function updateLeonardoQualification(){
  });
 }
 
+function sortReviewers(){
+ const list=document.querySelector('.reviewers');
+ if(!list)return;
+ [...list.querySelectorAll(':scope>article.rev')]
+   .sort((a,b)=>(a.querySelector('h3')?.textContent||'').localeCompare((b.querySelector('h3')?.textContent||''),'pt-BR',{sensitivity:'base'}))
+   .forEach(x=>list.appendChild(x));
+}
+
 function addLuizReviewer(){
  const list=document.querySelector('.reviewers');
- if(!list) return;
+ if(!list)return;
  if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Luiz Fernando Ribas Monteiro')){showLuizPhoto();return;}
  const article=document.createElement('article');
  article.className='rev';
@@ -88,25 +99,22 @@ function addLuizReviewer(){
  list.appendChild(article);
  const lang=localStorage.getItem('setariLang')==='en'?'en':'pt';
  article.querySelectorAll('[data-pt][data-en]').forEach(el=>{el.textContent=lang==='en'?el.dataset.en:el.dataset.pt;});
- [...list.querySelectorAll(':scope>article.rev')]
-   .sort((a,b)=>(a.querySelector('h3')?.textContent||'').localeCompare((b.querySelector('h3')?.textContent||''),'pt-BR',{sensitivity:'base'}))
-   .forEach(x=>list.appendChild(x));
+ sortReviewers();
  showLuizPhoto();
 }
 
 function addLucianaReviewer(){
  const list=document.querySelector('.reviewers');
  if(!list)return;
- if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Luciana Maria Margoti'))return;
+ if([...list.querySelectorAll('h3')].some(h=>h.textContent.trim()==='Luciana Maria Margoti')){showLucianaPhoto();return;}
  const article=document.createElement('article');
  article.className='rev';
- article.innerHTML=`<div class="mono" aria-label="Luciana Maria Margoti">LMM</div><div><span class="role" data-pt="Parecerista" data-en="Reviewer">Parecerista</span><h3>Luciana Maria Margoti</h3><p>Fundação Presidente Antônio Carlos (FUPAC/UNIPAC) · Brasil</p><p data-pt="Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions." data-en="Coordinator and professor. MSc in Electrical Engineering from the Federal University of São João del-Rei (UFSJ), in a UFSJ/CEFET-MG program. BASis evaluator since 2019 and reviewer for IEEE Latin America Transactions.">Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions.</p><p data-pt="Engenharia Elétrica · Modelagem e Controle · Redes Neurais" data-en="Electrical Engineering · Modeling and Control · Neural Networks">Engenharia Elétrica · Modelagem e Controle · Redes Neurais</p></div><div class="links"><a href="http://lattes.cnpq.br/0604873632052194" target="_blank" rel="noopener">Lattes</a></div>`;
+ article.innerHTML=`<img src="${LUCIANA_PHOTO}" alt="Luciana Maria Margoti"><div><span class="role" data-pt="Parecerista" data-en="Reviewer">Parecerista</span><h3>Luciana Maria Margoti</h3><p>Fundação Presidente Antônio Carlos (FUPAC/UNIPAC) · Brasil</p><p data-pt="Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions." data-en="Coordinator and professor. MSc in Electrical Engineering from the Federal University of São João del-Rei (UFSJ), in a UFSJ/CEFET-MG program. BASis evaluator since 2019 and reviewer for IEEE Latin America Transactions.">Coordenadora e professora. Mestra em Engenharia Elétrica pela Universidade Federal de São João del-Rei (UFSJ), em programa UFSJ/CEFET-MG. Avaliadora BASis desde 2019 e revisora da IEEE Latin America Transactions.</p><p data-pt="Engenharia Elétrica · Modelagem e Controle · Redes Neurais" data-en="Electrical Engineering · Modeling and Control · Neural Networks">Engenharia Elétrica · Modelagem e Controle · Redes Neurais</p></div><div class="links"><a href="http://lattes.cnpq.br/0604873632052194" target="_blank" rel="noopener">Lattes</a></div>`;
  list.appendChild(article);
  const lang=localStorage.getItem('setariLang')==='en'?'en':'pt';
  article.querySelectorAll('[data-pt][data-en]').forEach(el=>{el.textContent=lang==='en'?el.dataset.en:el.dataset.pt;});
- [...list.querySelectorAll(':scope>article.rev')]
-   .sort((a,b)=>(a.querySelector('h3')?.textContent||'').localeCompare((b.querySelector('h3')?.textContent||''),'pt-BR',{sensitivity:'base'}))
-   .forEach(x=>list.appendChild(x));
+ sortReviewers();
+ showLucianaPhoto();
 }
 
 function applyPageFixes(){
@@ -118,7 +126,9 @@ function applyPageFixes(){
  addLuizReviewer();
  addLucianaReviewer();
  showLuizPhoto();
+ showLucianaPhoto();
  keepLuizOnlyAsReviewer();
+ sortReviewers();
 }
 
 const s=document.createElement('script');
