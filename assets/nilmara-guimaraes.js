@@ -1,9 +1,9 @@
 (()=>{
-const BUILD='20260906-1045';
+const BUILD='20260906-2055';
 const PHOTOS={
   'Denise Stolle da Luz Weiss':`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
   'Luiz Fernando Ribas Monteiro':`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`,
-  'Luciana Maria Margoti':`assets/luciana-maria-margoti.jpg?v=${BUILD}`,
+  'Luciana Maria Margoti':`assets/luciana-maria-margoti-v2.jpg?v=${BUILD}`,
   'Nilmara Almeida Guimarães':`assets/nilmara-almeida-guimaraes.jpg?v=${BUILD}`
 };
 
