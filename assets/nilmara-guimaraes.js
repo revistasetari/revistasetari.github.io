@@ -1,40 +1,16 @@
 (()=>{
-const BUILD='20260907-1805-photo-api-fix';
-const BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const BUILD='20260907-1815-new-photo-files';
 const PHOTOS={
   'Denise Stolle da Luz Weiss':`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
-  'Luiz Fernando Ribas Monteiro':BLANK,
-  'Luciana Maria Margoti':BLANK,
+  'Luiz Fernando Ribas Monteiro':`assets/luiz-fernando-ribas-monteiro-20260907-final.jpg?v=${BUILD}`,
+  'Luciana Maria Margoti':`assets/luciana-margoti-20260907-final.jpg?v=${BUILD}`,
   'Nilmara Almeida Guimarães':`assets/nilmara-almeida-guimaraes.jpg?v=${BUILD}`
 };
-const REMOTE_PHOTOS={
-  'Luiz Fernando Ribas Monteiro':'assets/luiz-fernando-ribas-monteiro.jpg',
-  'Luciana Maria Margoti':'assets/luciana-maria-margoti.jpg'
-};
-const PHOTO_CACHE=new Map();
 
 function lang(){return localStorage.getItem('setariLang')==='en'?'en':'pt';}
 function applyLang(root=document){
   const l=lang();
   root.querySelectorAll('[data-pt][data-en]').forEach(el=>{el.textContent=l==='en'?el.dataset.en:el.dataset.pt;});
-}
-function loadRepoPhoto(path){
-  if(PHOTO_CACHE.has(path))return PHOTO_CACHE.get(path);
-  const url='https://api.github.com/repos/revistasetari/revistasetari.github.io/contents/'+path+'?ref=main';
-  const p=fetch(url,{headers:{Accept:'application/vnd.github+json'}})
-    .then(r=>{if(!r.ok)throw new Error('photo '+r.status);return r.json();})
-    .then(j=>{
-      const b64=String(j.content||'').replace(/\s/g,'');
-      if(!b64)throw new Error('empty photo');
-      return 'data:image/jpeg;base64,'+b64;
-    });
-  PHOTO_CACHE.set(path,p);
-  return p;
-}
-function hydrateReviewerPhoto(name,img){
-  const path=REMOTE_PHOTOS[name];
-  if(!path||!img)return;
-  loadRepoPhoto(path).then(src=>{if(img.isConnected)img.src=src;}).catch(()=>{});
 }
 function sortReviewers(){
   const list=document.querySelector('.reviewers'); if(!list)return;
@@ -67,7 +43,6 @@ function addReviewer({name,institution,pt,en,links}){
   let article=[...list.querySelectorAll(':scope>article.rev')].find(a=>a.querySelector('h3')?.textContent.trim()===name);
   if(!article){article=document.createElement('article');article.className='rev';list.appendChild(article);}
   article.innerHTML=`<img src="${PHOTOS[name]}" alt="${name}"><div><span class="role" data-pt="Parecerista" data-en="Reviewer">Parecerista</span><h3>${name}</h3><p>${institution}</p><p data-pt="${pt}" data-en="${en}">${pt}</p></div><div class="links">${links}</div>`;
-  hydrateReviewerPhoto(name,article.querySelector('img'));
   applyLang(article);
 }
 function fixStyle(){
