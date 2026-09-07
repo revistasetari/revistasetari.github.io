@@ -1,10 +1,10 @@
 (()=>{
-const BUILD='20260907-1607';
+const BUILD='20260907-1645-photo-fix';
 const PHOTOS={
-  'Denise Stolle da Luz Weiss':`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
-  'Luiz Fernando Ribas Monteiro':`assets/luiz-fernando-ribas-monteiro-v3.jpg?v=${BUILD}`,
-  'Luciana Maria Margoti':`assets/luciana-maria-margoti.svg?v=${BUILD}`,
-  'Nilmara Almeida Guimarães':`assets/nilmara-almeida-guimaraes.jpg?v=${BUILD}`
+  'Denise Stolle da Luz Weiss':`/assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
+  'Luiz Fernando Ribas Monteiro':`/assets/luiz-fernando-ribas-monteiro.jpg?v=${BUILD}`,
+  'Luciana Maria Margoti':`/assets/luciana-maria-margoti.jpg?v=${BUILD}`,
+  'Nilmara Almeida Guimarães':`/assets/nilmara-almeida-guimaraes.jpg?v=${BUILD}`
 };
 
 function lang(){return localStorage.getItem('setariLang')==='en'?'en':'pt';}
