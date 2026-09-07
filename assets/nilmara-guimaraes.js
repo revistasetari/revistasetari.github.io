@@ -1,5 +1,5 @@
 (()=>{
-const BUILD='20260907-1815-new-photo-files';
+const BUILD='20260907-1840-force-pages';
 const PHOTOS={
   'Denise Stolle da Luz Weiss':`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
   'Luiz Fernando Ribas Monteiro':`assets/luiz-fernando-ribas-monteiro-20260907-final.jpg?v=${BUILD}`,
