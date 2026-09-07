@@ -1,9 +1,9 @@
 (()=>{
-const BUILD='20260907-1705-raw-photo-fix';
+const BUILD='20260907-1722-photo-recovery';
 const PHOTOS={
   'Denise Stolle da Luz Weiss':`assets/denise-stolle-da-luz-weiss.jpg?v=${BUILD}`,
-  'Luiz Fernando Ribas Monteiro':'https://raw.githubusercontent.com/revistasetari/revistasetari.github.io/main/assets/luiz-fernando-ribas-monteiro.jpg',
-  'Luciana Maria Margoti':'https://raw.githubusercontent.com/revistasetari/revistasetari.github.io/main/assets/luciana-maria-margoti.jpg',
+  'Luiz Fernando Ribas Monteiro':`assets/luiz-fernando-ribas-monteiro.jpg?v=${BUILD}`,
+  'Luciana Maria Margoti':`assets/luciana-maria-margoti.svg?v=${BUILD}`,
   'Nilmara Almeida Guimarães':`assets/nilmara-almeida-guimaraes.jpg?v=${BUILD}`
 };
 
