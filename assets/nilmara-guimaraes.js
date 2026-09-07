@@ -58,7 +58,6 @@ function updateLeonardo(){
 }
 function apply(){
  fixStyle();
- addReviewer({name:'Luiz Fernando Ribas Monteiro',institution:'Instituto Federal de Educação, Ciência e Tecnologia de São Paulo (IFSP) · Brasil',pt:'Redes Inteligentes · Microrredes · Planejamento e Otimização de Sistemas Elétricos de Potência · Inteligência Artificial · Controle · Segurança Cibernética',en:'Smart Grids · Microgrids · Power System Planning and Optimization · Artificial Intelligence · Control · Cybersecurity',links:'<a href="https://orcid.org/0009-0003-1668-6414" target="_blank" rel="noopener">ORCID</a><a href="https://www.webofscience.com/wos/author/record/ITR-8588-2023" target="_blank" rel="noopener">Web of Science</a><a href="https://scholar.google.com/citations?user=22PEl5wAAAAJ&hl=pt-BR&oi=ao" target="_blank" rel="noopener">Google Scholar</a><a href="http://lattes.cnpq.br/0794752062606721" target="_blank" rel="noopener">Lattes</a>'});
  addReviewer({name:'Nilmara Almeida Guimarães',institution:'Instituto Federal de Educação, Ciência e Tecnologia do Rio de Janeiro (IFRJ) · Brasil',pt:'Metrologia · Qualidade · Inovação',en:'Metrology · Quality · Innovation',links:'<a href="http://lattes.cnpq.br/8713579950615464" target="_blank" rel="noopener">Lattes</a>'});
  ensurePhoto('Denise Stolle da Luz Weiss',PHOTOS['Denise Stolle da Luz Weiss']);
  updateLeonardo();
