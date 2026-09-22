@@ -15,16 +15,28 @@ function safeFileName(name){return name.normalize('NFD').replace(/[\u0300-\u036f
 async function signed(bucket,path,seconds=900){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(path,seconds);if(error)throw error;return data.signedUrl}
 
 let currentUser=null,currentProfile=null,allProfiles=[];
+const initialHashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+let recoveryMode=initialHashParams.get('type')==='recovery';
+const RESET_REDIRECT=location.origin+location.pathname;
 
 async function profileFor(id){const {data,error}=await supabase.from('profiles').select('*').eq('id',id).single();if(error)throw error;return data}
-async function refreshSession(){const {data:{session}}=await supabase.auth.getSession();if(!session){showAuth();return}currentUser=session.user;try{currentProfile=await profileFor(currentUser.id);showApp();await loadRolePanel()}catch(e){notice('Não foi possível carregar seu perfil: '+e.message,'error')}}
-function showAuth(){currentUser=currentProfile=null;$('#auth-view').hidden=false;$('#app-view').hidden=true}
-function showApp(){ $('#auth-view').hidden=true;$('#app-view').hidden=false;$('#user-name').textContent=currentProfile.full_name||'Usuário';$('#user-email').textContent=currentProfile.email;$('#user-role').textContent=labels[currentProfile.role]||currentProfile.role;['author','reviewer','editor'].forEach(x=>$('#'+x+'-panel').hidden=true);if(currentProfile.role==='editor_chief')$('#editor-panel').hidden=false;else if(currentProfile.role==='reviewer')$('#reviewer-panel').hidden=false;else $('#author-panel').hidden=false}
+async function refreshSession(){if(recoveryMode){showPasswordUpdate();return}const {data:{session}}=await supabase.auth.getSession();if(!session){showAuth();return}currentUser=session.user;try{currentProfile=await profileFor(currentUser.id);showApp();await loadRolePanel()}catch(e){notice('Não foi possível carregar seu perfil: '+e.message,'error')}}
+function showAuth(){currentUser=currentProfile=null;$('#auth-view').hidden=false;$('#password-reset-view').hidden=true;$('#app-view').hidden=true}
+function showPasswordRequest(){currentUser=currentProfile=null;$('#auth-view').hidden=true;$('#app-view').hidden=true;$('#password-reset-view').hidden=false;$('#forgot-password-form').hidden=false;$('#new-password-form').hidden=true}
+function showPasswordUpdate(){recoveryMode=true;currentUser=currentProfile=null;$('#auth-view').hidden=true;$('#app-view').hidden=true;$('#password-reset-view').hidden=false;$('#forgot-password-form').hidden=true;$('#new-password-form').hidden=false}
+function showApp(){ $('#auth-view').hidden=true;$('#password-reset-view').hidden=true;$('#app-view').hidden=false;$('#user-name').textContent=currentProfile.full_name||'Usuário';$('#user-email').textContent=currentProfile.email;$('#user-role').textContent=labels[currentProfile.role]||currentProfile.role;['author','reviewer','editor'].forEach(x=>$('#'+x+'-panel').hidden=true);if(currentProfile.role==='editor_chief')$('#editor-panel').hidden=false;else if(currentProfile.role==='reviewer')$('#reviewer-panel').hidden=false;else $('#author-panel').hidden=false}
 
 $('#login-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const {error}=await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});if(error)return notice(error.message,'error');e.currentTarget.reset();await refreshSession()});
 $('#signup-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const {data,error}=await supabase.auth.signUp({email:f.get('email'),password:f.get('password'),options:{data:{full_name:f.get('full_name')}}});if(error)return notice(error.message,'error');e.currentTarget.reset();if(data.session){notice('Conta criada com sucesso.');await refreshSession()}else notice('Conta criada. Verifique seu e-mail para confirmar o cadastro antes de entrar.','ok')});
+
+$('#forgot-password-open')?.addEventListener('click',()=>{const email=$('#login-form input[name=email]')?.value||'';showPasswordRequest();const target=$('#forgot-password-form input[name=email]');if(target){target.value=email;target.focus()}});
+$('#forgot-password-cancel')?.addEventListener('click',()=>showAuth());
+$('#forgot-password-form')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,fd=new FormData(form),email=String(fd.get('email')||'').trim(),btn=form.querySelector('button[type=submit]');btn.disabled=true;try{const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:RESET_REDIRECT});if(error)throw error;form.reset();notice('Se houver uma conta cadastrada com esse e-mail, enviaremos um link para redefinir a senha. Verifique também a pasta de spam.','ok');setTimeout(showAuth,1200)}catch(err){notice('Não foi possível enviar o link de recuperação: '+err.message,'error')}finally{btn.disabled=false}});
+
+$('#new-password-form')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,fd=new FormData(form),password=String(fd.get('password')||''),confirmPassword=String(fd.get('confirm_password')||''),btn=form.querySelector('button[type=submit]');if(password.length<8)return notice('A nova senha deve ter pelo menos 8 caracteres.','error');if(password!==confirmPassword)return notice('As senhas não coincidem.','error');btn.disabled=true;try{const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error('O link de recuperação é inválido ou expirou. Solicite um novo link.');const {error}=await supabase.auth.updateUser({password});if(error)throw error;form.reset();recoveryMode=false;history.replaceState({},document.title,location.pathname);notice('Senha atualizada com sucesso. Você já pode acessar sua conta.','ok');await supabase.auth.signOut();showAuth()}catch(err){notice('Não foi possível atualizar a senha: '+err.message,'error')}finally{btn.disabled=false}});
+
 $('#logout-btn')?.addEventListener('click',async()=>{await supabase.auth.signOut();showAuth()});
-supabase.auth.onAuthStateChange(()=>setTimeout(refreshSession,0));
+supabase.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'){recoveryMode=true;showPasswordUpdate();return}if(!recoveryMode)setTimeout(refreshSession,0)});
 
 async function loadRolePanel(){if(currentProfile.role==='editor_chief')return loadEditor();if(currentProfile.role==='reviewer')return loadReviewer();return loadAuthor()}
 
