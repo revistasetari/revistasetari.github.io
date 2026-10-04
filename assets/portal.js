@@ -184,7 +184,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages){
         <div class="communication-head"><div><strong>Comunicar autor</strong><small>Registra a comunicação no sistema e tenta enviar por e-mail.</small></div>${lastMessage?`<span class="email-state email-${esc(lastMessage.email_status||'pending')}">Último e-mail: ${esc(lastMessage.email_status||'pending')}</span>`:''}</div>
         <div class="form-row">
           <label>Tipo de comunicação<select class="message-decision">${decisionOptions}</select></label>
-          <label>Modelo rápido<select class="message-template"><option value="">Escolha um modelo</option><option value="triage">Triagem em andamento</option><option value="review">Em avaliação por pares</option><option value="revision">Solicitação de revisão</option><option value="accept">Aceite</option><option value="reject">Rejeição</option></select></label>
+          <label>Modelo rápido<select class="message-template"><option value="">Escolha um modelo</option><option value="triage">Triagem em andamento</option><option value="review">Em avaliação por pares</option><option value="revision">Solicitação de revisão</option>${currentProfile.role==='editor_chief'?'<option value="accept">Aceite</option><option value="reject">Rejeição</option>':''}</select></label>
         </div>
         <textarea class="message-text" rows="5" placeholder="Escreva a mensagem que será enviada ao autor..."></textarea>
         <div class="item-actions"><button class="btn primary send-author-message" type="button">Registrar e enviar e-mail</button></div>
