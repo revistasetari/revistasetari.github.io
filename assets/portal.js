@@ -38,7 +38,7 @@ async function loadAuthor(){const box=$('#author-submissions');box.innerHTML='<d
 
 async function loadReviewer(){const box=$('#reviewer-assignments');box.innerHTML='<div class="empty-msg">Carregando…</div>';const {data,error}=await supabase.rpc('reviewer_assigned_submissions');if(error){box.innerHTML=empty(error.message);return}if(!data?.length){box.innerHTML=empty('Nenhum artigo atribuído a você.');return}const {data:reviews}=await supabase.from('reviews').select('*').eq('reviewer_id',currentUser.id);const byAssign=Object.fromEntries((reviews||[]).map(r=>[r.assignment_id,r]));box.innerHTML='';for(const a of data){const existing=byAssign[a.assignment_id];const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[a.status]||a.status)}</span><span>${esc(a.code||'')}</span><span>Prazo: ${a.due_at?fmt(a.due_at):'não definido'}</span></div><h3>${esc(a.title)}</h3><p><strong>Área:</strong> ${esc(a.area||'—')}</p><p><strong>Resumo:</strong> ${esc(a.abstract||'—')}</p><p><strong>Palavras-chave:</strong> ${esc(a.keywords||'—')}</p><div class="item-actions"><button class="btn manuscript-btn" type="button">Baixar manuscrito anonimizado</button></div>${existing?.submitted?`<div class="review-block"><strong>Parecer enviado em ${fmt(existing.submitted_at)}</strong><p>${esc(existing.comments_to_author||'')}</p><p><b>Recomendação:</b> ${esc(existing.recommendation||'')}</p></div>`:`<form class="review-form"><label>Comentários aos autores<textarea name="comments_to_author" rows="6" required>${esc(existing?.comments_to_author||'')}</textarea></label><label>Comentários confidenciais ao Editor-Chefe<textarea name="confidential" rows="4">${esc(existing?.confidential_comments_to_editor||'')}</textarea></label><label>Recomendação<select name="recommendation" required><option value="">Selecione</option><option value="accept">Aceitar</option><option value="minor_revision">Revisão menor</option><option value="major_revision">Revisão maior</option><option value="reject">Rejeitar</option></select></label><label>Arquivo de parecer anotado (opcional)<input type="file" name="review_file" accept=".pdf,.docx"></label><button class="btn primary" type="submit">Enviar parecer final</button></form>`}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',a.manuscript_path)}catch(e){notice(e.message,'error')}};const form=div.querySelector('.review-form');if(form)form.onsubmit=async ev=>{ev.preventDefault();if(!confirm('Enviar o parecer como final? Ele ficará visível ao Editor-Chefe.'))return;const fd=new FormData(form);const btn=form.querySelector('button');btn.disabled=true;try{let reviewPath=existing?.review_file_path||null,file=fd.get('review_file');if(file?.size){if(file.size>10*1024*1024)throw new Error('Arquivo de parecer maior que 10 MB.');reviewPath=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;const up=await supabase.storage.from('reviews').upload(reviewPath,file,{upsert:false});if(up.error)throw up.error}const payload={assignment_id:a.assignment_id,reviewer_id:currentUser.id,comments_to_author:fd.get('comments_to_author'),confidential_comments_to_editor:fd.get('confidential'),recommendation:fd.get('recommendation'),review_file_path:reviewPath,submitted:true,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()};const q=existing?supabase.from('reviews').update(payload).eq('id',existing.id):supabase.from('reviews').insert(payload);const {error}=await q;if(error)throw error;await supabase.from('review_assignments').update({completed_at:new Date().toISOString()}).eq('id',a.assignment_id);notice('Parecer enviado ao Editor-Chefe.');await loadReviewer()}catch(e){notice(e.message,'error')}finally{btn.disabled=false}};box.appendChild(div)}}
 
-async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery]);if(ps.error||ss.error||aa.error||rr.error)return notice((ps.error||ss.error||aa.error||rr.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[])}
+async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false})]);if(ps.error||ss.error||aa.error||rr.error||mm.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[])}
 function editorWorkflowState(s,assignments,reviews){
   const submittedReviews=reviews.filter(r=>r.submitted);
   const pendingAssignments=assignments.filter(a=>!a.completed_at);
@@ -121,6 +121,150 @@ function renderUsers(profiles){
     box.appendChild(section);
   });
 }
-async function renderEditorSubmissions(subs,assign,reviews){const box=$('#editor-submissions');if(!subs.length){box.innerHTML=empty('Nenhuma submissão recebida.');return}const reviewers=allProfiles.filter(p=>p.role==='reviewer'&&p.active);const profileMap=Object.fromEntries(allProfiles.map(p=>[p.id,p]));box.innerHTML='';for(const s of subs){const as=assign.filter(a=>a.submission_id===s.id),rs=reviews.filter(r=>as.some(a=>a.id===r.assignment_id));const author=profileMap[s.author_id];const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[s.status]||s.status)}</span><span>${esc(s.code||'')}</span><span>${fmt(s.submitted_at)}</span></div><h3>${esc(s.title)}</h3><p><b>Autor:</b> ${esc(author?.full_name||'')} · ${esc(author?.email||'')} ${author?.institution?'· '+esc(author.institution):''}</p><p><b>Área:</b> ${esc(s.area||'—')}</p><p><b>Resumo:</b> ${esc(s.abstract||'—')}</p><div class="item-actions"><button class="btn manuscript-btn">Baixar manuscrito</button><select class="status-select">${(currentProfile.role==='managing_editor'?['submitted','under_screening','under_review','revision_requested','withdrawn']:['submitted','under_screening','under_review','revision_requested','accepted','rejected','withdrawn']).map(x=>`<option value="${x}" ${s.status===x?'selected':''}>${labels[x]}</option>`).join('')}</select><button class="btn release-resubmission-btn" type="button">Liberar reenvio</button></div><div class="review-block"><strong>Atribuir parecerista</strong><div class="item-actions"><select class="reviewer-select"><option value="">Selecione</option>${reviewers.map(r=>`<option value="${r.id}">${esc(r.full_name||r.email)} · ${esc(r.institution||'')}</option>`).join('')}</select><input class="due-date" type="date"><button class="btn assign-btn">Atribuir</button></div>${as.length?`<p><b>Atribuídos:</b> ${as.map(a=>`${esc(profileMap[a.reviewer_id]?.full_name||profileMap[a.reviewer_id]?.email||'Parecerista')} ${a.completed_at?'✓':'(pendente)'}`).join(' · ')}</p>`:''}</div>${rs.length?`<div class="review-block"><strong>Pareceres recebidos</strong>${rs.map((r,i)=>`<div class="review-block"><p><b>Parecerista:</b> ${esc(profileMap[r.reviewer_id]?.full_name||profileMap[r.reviewer_id]?.email||'')}</p><p><b>Recomendação:</b> ${esc(r.recommendation||'')}</p><p><b>Comentários aos autores:</b> ${esc(r.comments_to_author||'')}</p><p><b>Confidencial ao editor:</b> ${esc(r.confidential_comments_to_editor||'')}</p>${r.review_file_path?`<button class="btn review-file" data-path="${esc(r.review_file_path)}">Baixar arquivo do parecer</button>`:''}</div>`).join('')}</div>`:''}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};div.querySelector('.status-select').onchange=async e=>{let error=null;if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:e.target.value});error=r.error}else{const r=await supabase.from('submissions').update({status:e.target.value,updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}if(error)return notice(error.message,'error');notice('Status atualizado.');await loadEditor()};div.querySelector('.release-resubmission-btn').onclick=async()=>{if(!confirm('Liberar o autor para fazer um novo envio? A submissão atual será marcada como retirada e permanecerá registrada no histórico.'))return;let error=null;if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:'withdrawn'});error=r.error}else{const r=await supabase.from('submissions').update({status:'withdrawn',updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}if(error)return notice(error.message,'error');notice('Reenvio liberado. O autor pode fazer uma nova submissão.','ok');await loadEditor()};div.querySelector('.assign-btn').onclick=async()=>{const rid=div.querySelector('.reviewer-select').value;if(!rid)return notice('Selecione um parecerista.','error');const due=div.querySelector('.due-date').value;const {error}=await supabase.rpc('assign_reviewer',{p_submission:s.id,p_reviewer:rid,p_due_at:due?new Date(due+'T23:59:59').toISOString():null});if(error)return notice(error.message,'error');notice('Parecerista atribuído.');await loadEditor()};div.querySelectorAll('.review-file').forEach(b=>b.onclick=async()=>{try{location.href=await signed('reviews',b.dataset.path)}catch(e){notice(e.message,'error')}});box.appendChild(div)}}
+async function renderEditorSubmissions(subs,assign,reviews,messages){
+  const box=$('#editor-submissions');
+  if(!subs.length){box.innerHTML=empty('Nenhuma submissão recebida.');return}
+  const reviewers=allProfiles.filter(p=>p.role==='reviewer'&&p.active);
+  const profileMap=Object.fromEntries(allProfiles.map(p=>[p.id,p]));
+  const ordered=[...subs].sort((a,b)=>{
+    const aa=assign.filter(x=>x.submission_id===a.id), ar=reviews.filter(r=>aa.some(x=>x.id===r.assignment_id));
+    const ba=assign.filter(x=>x.submission_id===b.id), br=reviews.filter(r=>ba.some(x=>x.id===r.assignment_id));
+    return editorWorkflowState(a,aa,ar).priority-editorWorkflowState(b,ba,br).priority || new Date(a.submitted_at)-new Date(b.submitted_at);
+  });
+  box.innerHTML='';
+  for(const s of ordered){
+    const as=assign.filter(a=>a.submission_id===s.id);
+    const rs=reviews.filter(r=>as.some(a=>a.id===r.assignment_id));
+    const author=profileMap[s.author_id];
+    const flow=editorWorkflowState(s,as,rs);
+    const received=rs.filter(r=>r.submitted).length;
+    const pending=as.filter(a=>!a.completed_at).length;
+    const lastMessage=messages.find(m=>m.submission_id===s.id);
+    const decisionOptions=currentProfile.role==='editor_chief'
+      ? '<option value="">Comunicação geral</option><option value="revision_requested">Solicitar revisão</option><option value="accepted">Comunicar aceite</option><option value="rejected">Comunicar rejeição</option>'
+      : '<option value="">Comunicação geral</option><option value="revision_requested">Solicitar revisão</option>';
+    const confidential= currentProfile.role==='editor_chief'
+      ? rs.map((r,i)=>r.confidential_comments_to_editor?'<div class="confidential-note"><b>Confidencial · Parecer '+(i+1)+':</b> '+esc(r.confidential_comments_to_editor)+'</div>':'').join('')
+      : '';
+    const div=document.createElement('article');
+    div.className='item-card editorial-card priority-'+flow.priority;
+    div.innerHTML=`
+      <div class="editorial-card-head">
+        <div class="item-meta"><span class="status">${esc(labels[s.status]||s.status)}</span><span>${esc(s.code||'')}</span><span>${fmt(s.submitted_at)}</span></div>
+        <span class="workflow-badge workflow-${flow.key}">${flow.label}</span>
+      </div>
+      <h3>${esc(s.title)}</h3>
+      <div class="workflow-next"><strong>Próxima ação recomendada</strong><span>${esc(flow.text)}</span></div>
+      <div class="review-progress">
+        <div><b>${as.length}</b><span>Atribuídos</span></div>
+        <div><b>${received}</b><span>Recebidos</span></div>
+        <div><b>${pending}</b><span>Pendentes</span></div>
+      </div>
+      <details class="submission-details"><summary>Dados da submissão e resumo</summary>
+        <p><b>Autor:</b> ${esc(author?.full_name||'')} · ${esc(author?.email||'')} ${author?.institution?'· '+esc(author.institution):''}</p>
+        <p><b>Área:</b> ${esc(s.area||'—')}</p>
+        <p><b>Resumo:</b> ${esc(s.abstract||'—')}</p>
+      </details>
+      <div class="editor-action-bar">
+        <button class="btn manuscript-btn">Baixar manuscrito</button>
+        <select class="status-select">${(currentProfile.role==='managing_editor'?['submitted','under_screening','under_review','revision_requested','withdrawn']:['submitted','under_screening','under_review','revision_requested','accepted','rejected','withdrawn']).map(x=>`<option value="${x}" ${s.status===x?'selected':''}>${labels[x]}</option>`).join('')}</select>
+        <button class="btn release-resubmission-btn" type="button">Liberar reenvio</button>
+      </div>
+      <div class="review-block reviewer-management">
+        <strong>Gestão dos pareceristas</strong>
+        <div class="item-actions">
+          <select class="reviewer-select"><option value="">Selecionar parecerista</option>${reviewers.map(r=>`<option value="${r.id}">${esc(r.full_name||r.email)} · ${esc(r.institution||'')}</option>`).join('')}</select>
+          <input class="due-date" type="date">
+          <button class="btn assign-btn">Atribuir</button>
+        </div>
+        ${as.length?`<div class="assigned-list">${as.map(a=>`<span class="${a.completed_at?'done':'pending'}">${esc(profileMap[a.reviewer_id]?.full_name||profileMap[a.reviewer_id]?.email||'Parecerista')} · ${a.completed_at?'parecer recebido':'pendente'}${a.due_at?' · '+fmt(a.due_at):''}</span>`).join('')}</div>`:'<p class="muted-line">Nenhum parecerista atribuído.</p>'}
+      </div>
+      ${rs.length?`<details class="review-block"><summary><strong>Pareceres recebidos (${received})</strong></summary>${rs.filter(r=>r.submitted).map((r,i)=>`<div class="review-block"><p><b>Parecerista:</b> ${esc(profileMap[r.reviewer_id]?.full_name||profileMap[r.reviewer_id]?.email||'')}</p><p><b>Recomendação:</b> ${esc(r.recommendation||'')}</p><p><b>Comentários aos autores:</b> ${esc(r.comments_to_author||'')}</p>${r.review_file_path?`<button class="btn review-file" data-path="${esc(r.review_file_path)}">Baixar arquivo do parecer</button>`:''}</div>`).join('')}${confidential}</details>`:''}
+      <div class="author-communication">
+        <div class="communication-head"><div><strong>Comunicar autor</strong><small>Registra a comunicação no sistema e tenta enviar por e-mail.</small></div>${lastMessage?`<span class="email-state email-${esc(lastMessage.email_status||'pending')}">Último e-mail: ${esc(lastMessage.email_status||'pending')}</span>`:''}</div>
+        <div class="form-row">
+          <label>Tipo de comunicação<select class="message-decision">${decisionOptions}</select></label>
+          <label>Modelo rápido<select class="message-template"><option value="">Escolha um modelo</option><option value="triage">Triagem em andamento</option><option value="review">Em avaliação por pares</option><option value="revision">Solicitação de revisão</option><option value="accept">Aceite</option><option value="reject">Rejeição</option></select></label>
+        </div>
+        <textarea class="message-text" rows="5" placeholder="Escreva a mensagem que será enviada ao autor..."></textarea>
+        <div class="item-actions"><button class="btn primary send-author-message" type="button">Registrar e enviar e-mail</button></div>
+      </div>`;
+
+    div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};
+    div.querySelector('.status-select').onchange=async e=>{
+      let error=null;
+      if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:e.target.value});error=r.error}
+      else{const r=await supabase.from('submissions').update({status:e.target.value,updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}
+      if(error)return notice(error.message,'error');
+      notice('Status atualizado.','ok');await loadEditor()
+    };
+    div.querySelector('.release-resubmission-btn').onclick=async()=>{
+      if(!confirm('Liberar o autor para fazer um novo envio? A submissão atual será marcada como retirada e permanecerá registrada no histórico.'))return;
+      let error=null;
+      if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:'withdrawn'});error=r.error}
+      else{const r=await supabase.from('submissions').update({status:'withdrawn',updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}
+      if(error)return notice(error.message,'error');
+      notice('Reenvio liberado. O autor pode fazer uma nova submissão.','ok');await loadEditor()
+    };
+    div.querySelector('.assign-btn').onclick=async()=>{
+      const rid=div.querySelector('.reviewer-select').value;
+      if(!rid)return notice('Selecione um parecerista.','error');
+      const due=div.querySelector('.due-date').value;
+      const {error}=await supabase.rpc('assign_reviewer',{p_submission:s.id,p_reviewer:rid,p_due_at:due?new Date(due+'T23:59:59').toISOString():null});
+      if(error)return notice(error.message,'error');
+      notice('Parecerista atribuído.','ok');await loadEditor()
+    };
+    div.querySelectorAll('.review-file').forEach(b=>b.onclick=async()=>{try{location.href=await signed('reviews',b.dataset.path)}catch(e){notice(e.message,'error')}});
+
+    const template=div.querySelector('.message-template');
+    const message=div.querySelector('.message-text');
+    const decision=div.querySelector('.message-decision');
+    template.onchange=()=>{
+      const name=author?.full_name||'Autor(a)';
+      const templates={
+        triage:`Prezado(a) ${name},\n\nInformamos que o manuscrito ${s.code||''} — ${s.title} encontra-se em triagem editorial inicial. A equipe editorial comunicará os próximos passos pela Área Restrita da SETARI.\n\nAtenciosamente,\nEquipe Editorial SETARI`,
+        review:`Prezado(a) ${name},\n\nInformamos que o manuscrito ${s.code||''} — ${s.title} foi encaminhado para avaliação por pares. Acompanhe o andamento pela Área Restrita da SETARI.\n\nAtenciosamente,\nEquipe Editorial SETARI`,
+        revision:`Prezado(a) ${name},\n\nApós a avaliação editorial e dos pareceristas, solicitamos a revisão do manuscrito ${s.code||''} — ${s.title}. Consulte os pareceres disponibilizados na Área Restrita, realize os ajustes solicitados e encaminhe a nova versão.\n\nAtenciosamente,\nEquipe Editorial SETARI`,
+        accept:`Prezado(a) ${name},\n\nTemos a satisfação de informar que o manuscrito ${s.code||''} — ${s.title} foi aceito para publicação na SETARI. As orientações para a etapa final serão encaminhadas pela equipe editorial.\n\nAtenciosamente,\nEquipe Editorial SETARI`,
+        reject:`Prezado(a) ${name},\n\nApós a avaliação editorial e por pares, informamos que o manuscrito ${s.code||''} — ${s.title} não foi aceito para publicação nesta oportunidade. Agradecemos a submissão e a confiança na SETARI.\n\nAtenciosamente,\nEquipe Editorial SETARI`
+      };
+      message.value=templates[template.value]||'';
+      if(template.value==='revision')decision.value='revision_requested';
+      if(template.value==='accept'&&currentProfile.role==='editor_chief')decision.value='accepted';
+      if(template.value==='reject'&&currentProfile.role==='editor_chief')decision.value='rejected';
+    };
+
+    div.querySelector('.send-author-message').onclick=async()=>{
+      const text=message.value.trim();
+      const dec=decision.value||null;
+      if(text.length<3)return notice('Escreva a mensagem ao autor antes de enviar.','error');
+      if(!confirm('Registrar esta comunicação e disparar o e-mail para '+(author?.email||'o autor')+'?'))return;
+      const btn=div.querySelector('.send-author-message');btn.disabled=true;btn.textContent='Enviando…';
+      try{
+        const created=await supabase.rpc('create_editorial_message',{p_submission_id:s.id,p_message:text,p_decision:dec});
+        if(created.error)throw created.error;
+        const messageId=created.data;
+        if(dec){
+          let statusError=null;
+          if(currentProfile.role==='managing_editor'){
+            const st=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:dec});statusError=st.error;
+          }else{
+            const st=await supabase.from('submissions').update({status:dec,updated_at:new Date().toISOString()}).eq('id',s.id);statusError=st.error;
+          }
+          if(statusError)throw statusError;
+        }
+        const sent=await supabase.functions.invoke('send-author-editorial-email',{body:{message_id:messageId}});
+        if(sent.error)throw sent.error;
+        if(sent.data?.error)throw new Error(sent.data.error);
+        if(sent.data?.email_status==='waiting_domain')notice('Comunicação registrada. O serviço de e-mail está aguardando a configuração do domínio/remetente.','error');
+        else notice('Comunicação registrada e e-mail enviado ao autor.','ok');
+        await loadEditor();
+      }catch(err){notice('A comunicação foi interrompida: '+(err?.message||err),'error')}
+      finally{btn.disabled=false;btn.textContent='Registrar e enviar e-mail'}
+    };
+    box.appendChild(div);
+  }
+}
+
 
 refreshSession();
