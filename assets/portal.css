@@ -53,3 +53,8 @@
 .file-missing{font-size:.75rem;color:#8a5a4b;background:#fff1ea;border-radius:7px;padding:.45rem .55rem;margin-top:.35rem}
 .editor-files{margin:.9rem 0 1rem}
 @media(max-width:760px){.submission-file-grid,.file-separation{grid-template-columns:1fr}.portal-module-nav{position:static}.portal-nav-btn{flex:1 1 auto}}
+
+.portal-subnav{display:flex;gap:.55rem;flex-wrap:wrap;margin:1rem 0 1.25rem;padding:.65rem;background:#f3f7f7;border:1px solid #dbe5e5;border-radius:12px}
+.portal-subnav-btn{border:1px solid #bdcece;background:#fff;color:#315d64;border-radius:999px;padding:.58rem .9rem;font-weight:800;cursor:pointer}
+.portal-subnav-btn[aria-selected="true"]{background:#07383f;color:#fff;border-color:#07383f}
+.editor-overview-panel{margin-bottom:1rem}
