@@ -13,16 +13,42 @@ function notice(msg,type='ok'){alertBox.textContent=msg;alertBox.className='port
 function empty(text){return `<div class="empty-msg">${esc(text)}</div>`}
 function showPortalTab(scope,target){
   const root=scope==='editor'?$('#editor-panel'):$('#author-panel');
-  if(!root)return;
-  root.querySelectorAll('[data-tab-page]').forEach(p=>p.hidden=p.dataset.tabPage!==target);
-  root.querySelectorAll('.portal-subnav-btn').forEach(b=>b.setAttribute('aria-selected',b.dataset.tabTarget===target?'true':'false'));
+  if(!root)return false;
+  if(scope==='editor'&&(target==='users'||target==='lab')&&currentProfile?.role!=='editor_chief'){
+    notice('Esta área é exclusiva do Editor-Chefe.','error');
+    return false;
+  }
+  const pages=[...root.querySelectorAll('[data-tab-page]')];
+  pages.forEach(p=>{
+    const active=p.dataset.tabPage===target;
+    p.hidden=!active;
+    if(active)p.removeAttribute('hidden');else p.setAttribute('hidden','');
+  });
+  root.querySelectorAll('.portal-subnav-btn').forEach(b=>{
+    const active=b.dataset.tabTarget===target;
+    b.setAttribute('aria-selected',active?'true':'false');
+  });
+  const targetPage=pages.find(p=>p.dataset.tabPage===target);
+  if(targetPage)targetPage.scrollIntoView({block:'start',behavior:'auto'});
+  return !!targetPage;
 }
-document.addEventListener('click',e=>{
+document.addEventListener('click',async e=>{
   const btn=e.target.closest('.portal-subnav-btn');
   if(!btn)return;
+  e.preventDefault();
   const nav=btn.closest('.portal-subnav');
   if(!nav)return;
-  showPortalTab(nav.dataset.tabScope,btn.dataset.tabTarget);
+  const scope=nav.dataset.tabScope,target=btn.dataset.tabTarget;
+  const opened=showPortalTab(scope,target);
+  if(!opened)return;
+  if(scope==='editor'&&target==='users'&&currentProfile?.role==='editor_chief'){
+    try{
+      const {data,error}=await supabase.from('profiles').select('*').order('full_name');
+      if(error)throw error;
+      allProfiles=data||[];
+      renderUsers(allProfiles);
+    }catch(err){notice('Não foi possível atualizar a lista de usuários: '+err.message,'error')}
+  }
 });
 function safeFileName(name){return name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-120)}
 async function signed(bucket,path,seconds=900){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(path,seconds);if(error)throw error;return data.signedUrl}
