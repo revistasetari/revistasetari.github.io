@@ -58,3 +58,15 @@
 .portal-subnav-btn{border:1px solid #bdcece;background:#fff;color:#315d64;border-radius:999px;padding:.58rem .9rem;font-weight:800;cursor:pointer}
 .portal-subnav-btn[aria-selected="true"]{background:#07383f;color:#fff;border-color:#07383f}
 .editor-overview-panel{margin-bottom:1rem}
+
+.submission-file-grid,.file-separation{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.submission-file-box,.file-card{border:2px solid #d8e4e4;border-radius:14px;padding:1rem;background:#fff;display:grid;gap:.45rem}
+.manuscript-box,.manuscript-file{border-color:#7da9b0;background:#f7fbfc}
+.cover-box,.cover-file{border-color:#cbb27a;background:#fffaf0}
+.file-kind{font-size:.66rem;font-weight:900;letter-spacing:.08em;color:#60757a}
+.submission-file-box h3,.file-card strong{margin:0;color:#07383f}
+.submission-file-box p,.file-card small{margin:0;color:#5d7074;line-height:1.45}
+.file-card .btn{justify-self:start;margin-top:.45rem}
+.file-missing{font-size:.75rem;color:#8a5a4b;background:#fff1ea;border-radius:7px;padding:.45rem .55rem;margin-top:.35rem}
+.editor-files{margin:.9rem 0 1rem}
+@media(max-width:760px){.submission-file-grid,.file-separation{grid-template-columns:1fr}.portal-subnav-btn{flex:1 1 auto}}
