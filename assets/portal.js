@@ -13,13 +13,56 @@ function notice(msg,type='ok'){alertBox.textContent=msg;alertBox.className='port
 function empty(text){return `<div class="empty-msg">${esc(text)}</div>`}
 function safeFileName(name){return name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-120)}
 async function signed(bucket,path,seconds=900){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(path,seconds);if(error)throw error;return data.signedUrl}
+function portalRules(){return document.querySelector('.portal-rules')}
+function hidePortalModules(){
+  document.querySelectorAll('.portal-module').forEach(el=>el.hidden=true);
+  const rules=portalRules(); if(rules)rules.hidden=true;
+}
+function activatePortalModule(key){
+  hidePortalModules();
+  document.querySelectorAll('[data-portal-module="'+key+'"]').forEach(el=>el.hidden=false);
+  if(key==='guidelines'){const rules=portalRules();if(rules)rules.hidden=false}
+  document.querySelectorAll('#portal-module-nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.module===key?'true':'false'));
+}
+function setupPortalNavigation(){
+  const nav=$('#portal-module-nav'); if(!nav)return;
+  const authorPanel=$('#author-panel'), reviewerPanel=$('#reviewer-panel'), editorPanel=$('#editor-panel');
+  document.querySelectorAll('.portal-module').forEach(el=>{el.classList.remove('portal-module');delete el.dataset.portalModule});
+
+  let items=[];
+  if(currentProfile.role==='author'){
+    const sections=authorPanel?.querySelectorAll(':scope > .portal-grid > section.panel')||[];
+    if(sections[0]){sections[0].classList.add('portal-module');sections[0].dataset.portalModule='new-submission'}
+    if(sections[1]){sections[1].classList.add('portal-module');sections[1].dataset.portalModule='my-submissions'}
+    items=[['new-submission','Nova submissão'],['my-submissions','Minhas submissões'],['guidelines','Orientações']];
+  }else if(currentProfile.role==='reviewer'){
+    const section=reviewerPanel?.querySelector('section.panel');
+    if(section){section.classList.add('portal-module');section.dataset.portalModule='reviews'}
+    items=[['reviews','Minhas avaliações'],['guidelines','Orientações']];
+  }else{
+    const summary=$('#editor-summary');
+    const submissions=$('#editor-submissions')?.closest('section.panel');
+    const users=$('#editor-users')?.closest('section.panel');
+    const lab=editorPanel?.querySelector('.demo-lab');
+    if(summary){summary.classList.add('portal-module');summary.dataset.portalModule='overview'}
+    if(submissions){submissions.classList.add('portal-module');submissions.dataset.portalModule='submissions'}
+    if(users){users.classList.add('portal-module');users.dataset.portalModule='users'}
+    if(lab){lab.classList.add('portal-module');lab.dataset.portalModule='lab'}
+    items=[['overview','Visão geral'],['submissions','Submissões']];
+    if(currentProfile.role==='editor_chief')items.push(['users','Usuários'],['lab','Laboratório']);
+    items.push(['guidelines','Orientações']);
+  }
+  nav.innerHTML=items.map(([key,label])=>'<button type="button" class="portal-nav-btn" data-module="'+key+'" aria-selected="false">'+label+'</button>').join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>activatePortalModule(b.dataset.module));
+  activatePortalModule(items[0]?.[0]||'guidelines');
+}
 
 let currentUser=null,currentProfile=null,allProfiles=[];
 async function profileFor(id){const {data,error}=await supabase.from('profiles').select('*').eq('id',id).single();if(error)throw error;return data}
 async function refreshSession(){const {data:{session}}=await supabase.auth.getSession();if(!session){showAuth();return}currentUser=session.user;try{currentProfile=await profileFor(currentUser.id);if(currentProfile.force_password_change){showForcedPasswordChange();return}showApp();await loadRolePanel()}catch(e){notice('Não foi possível carregar seu perfil: '+e.message,'error')}}
-function showAuth(){currentUser=currentProfile=null;$('#auth-view').hidden=false;$('#forced-password-view').hidden=true;$('#app-view').hidden=true}
+function showAuth(){currentUser=currentProfile=null;$('#auth-view').hidden=false;$('#forced-password-view').hidden=true;$('#app-view').hidden=true;const rules=portalRules();if(rules)rules.hidden=false}
 function showForcedPasswordChange(){$('#auth-view').hidden=true;$('#app-view').hidden=true;$('#forced-password-view').hidden=false;$('#forced-user-email').textContent=currentProfile?.email||currentUser?.email||''}
-function showApp(){ $('#auth-view').hidden=true;$('#forced-password-view').hidden=true;$('#app-view').hidden=false;$('#user-name').textContent=currentProfile.full_name||'Usuário';$('#user-email').textContent=currentProfile.email;$('#user-role').textContent=labels[currentProfile.role]||currentProfile.role;['author','reviewer','editor'].forEach(x=>$('#'+x+'-panel').hidden=true);if(currentProfile.role==='editor_chief'||currentProfile.role==='managing_editor'){$('#editor-panel').hidden=false;const usersPanel=$('#editor-users')?.closest('.panel');const demoPanel=document.querySelector('.demo-lab');if(usersPanel)usersPanel.hidden=currentProfile.role==='managing_editor';if(demoPanel)demoPanel.hidden=currentProfile.role==='managing_editor'}else if(currentProfile.role==='reviewer')$('#reviewer-panel').hidden=false;else $('#author-panel').hidden=false}
+function showApp(){ $('#auth-view').hidden=true;$('#forced-password-view').hidden=true;$('#app-view').hidden=false;const rules=portalRules();if(rules)rules.hidden=true;$('#user-name').textContent=currentProfile.full_name||'Usuário';$('#user-email').textContent=currentProfile.email;$('#user-role').textContent=labels[currentProfile.role]||currentProfile.role;['author','reviewer','editor'].forEach(x=>$('#'+x+'-panel').hidden=true);if(currentProfile.role==='editor_chief'||currentProfile.role==='managing_editor'){$('#editor-panel').hidden=false;const usersPanel=$('#editor-users')?.closest('.panel');const demoPanel=document.querySelector('.demo-lab');if(usersPanel)usersPanel.hidden=currentProfile.role==='managing_editor';if(demoPanel)demoPanel.hidden=currentProfile.role==='managing_editor'}else if(currentProfile.role==='reviewer')$('#reviewer-panel').hidden=false;else $('#author-panel').hidden=false;setupPortalNavigation()}
 
 $('#login-form')?.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const {error}=await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});if(error)return notice(error.message,'error');e.currentTarget.reset();await refreshSession()});
 $('#signup-form')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,fd=new FormData(form),fullName=String(fd.get('full_name')||'').trim(),email=String(fd.get('email')||'').trim().toLowerCase(),password=String(fd.get('password')||''),confirmPassword=String(fd.get('confirm_password')||''),btn=form.querySelector('button[type=submit]');if(fullName.length<3)return notice('Informe seu nome completo.','error');if(password.length<8)return notice('A senha deve ter pelo menos 8 caracteres.','error');if(password!==confirmPassword)return notice('As senhas não coincidem.','error');btn.disabled=true;const originalText=btn.textContent;btn.textContent='Criando conta…';try{const {data,error}=await supabase.auth.signUp({email,password,options:{data:{full_name:fullName}}});if(error)throw error;if(!data?.user)throw new Error('Não foi possível concluir o cadastro. Tente novamente.');if(Array.isArray(data.user.identities)&&data.user.identities.length===0){throw new Error('Não foi possível criar uma nova conta com este e-mail. Se ele já estiver cadastrado, use a opção Entrar ou solicite a redefinição manual à equipe editorial.')}let session=data.session;if(!session){const login=await supabase.auth.signInWithPassword({email,password});if(!login.error)session=login.data.session}if(session){currentUser=session.user;let profile=null,lastError=null;for(let i=0;i<6;i++){try{profile=await profileFor(currentUser.id);break}catch(err){lastError=err;await new Promise(r=>setTimeout(r,250))}}if(!profile)throw lastError||new Error('A conta foi criada, mas o perfil ainda não ficou disponível. Tente entrar novamente em alguns segundos.');currentProfile=profile;form.reset();notice('Conta criada com sucesso. Bem-vindo à Área Restrita da SETARI.','ok');showApp();await loadRolePanel();return}form.reset();notice('Conta criada. Agora use o mesmo e-mail e senha para entrar.','ok')}catch(err){const msg=String(err?.message||'erro inesperado');if(/email rate limit exceeded|over_email_send_rate_limit/i.test(msg)){notice('O serviço de confirmação por e-mail atingiu temporariamente o limite de envios. Aguarde e tente novamente mais tarde. Se o prazo de submissão estiver próximo, entre em contato com revistasetari@gmail.com para que a equipe editorial auxilie no cadastro.','error')}else if(/already|registered|exists|duplicate/i.test(msg)){notice('Este e-mail já pode estar cadastrado. Tente entrar com sua senha ou solicite a redefinição manual à equipe editorial.','error')}else{notice('Não foi possível criar a conta: '+msg,'error')}}finally{btn.disabled=false;btn.textContent=originalText}});
@@ -32,9 +75,47 @@ supabase.auth.onAuthStateChange(()=>setTimeout(refreshSession,0));
 
 async function loadRolePanel(){if(currentProfile.role==='editor_chief'||currentProfile.role==='managing_editor')return loadEditor();if(currentProfile.role==='reviewer')return loadReviewer();return loadAuthor()}
 
-$('#submission-form')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,fd=new FormData(form),file=fd.get('manuscript');if(!file||!file.size)return notice('Selecione o manuscrito.','error');if(file.size>25*1024*1024)return notice('O arquivo ultrapassa 25 MB.','error');const ext=(file.name.split('.').pop()||'').toLowerCase();if(!['pdf','docx'].includes(ext))return notice('Envie PDF ou DOCX.','error');const btn=form.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Enviando…';try{const path=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;let {error}=await supabase.storage.from('manuscripts').upload(path,file,{upsert:false,contentType:file.type||undefined});if(error)throw error;({error}=await supabase.from('submissions').insert({author_id:currentUser.id,title:fd.get('title'),abstract:fd.get('abstract'),keywords:fd.get('keywords'),area:fd.get('area'),manuscript_path:path}));if(error)throw error;form.reset();notice('Artigo submetido com sucesso. A identidade do autor ficou separada do manuscrito.');await loadAuthor()}catch(err){notice('Falha ao submeter: '+err.message,'error')}finally{btn.disabled=false;btn.textContent='Enviar manuscrito'}});
+$('#submission-form')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const form=e.currentTarget,fd=new FormData(form);
+  const manuscript=fd.get('manuscript'),cover=fd.get('cover_sheet');
+  if(!manuscript||!manuscript.size)return notice('Selecione o manuscrito anonimizado.','error');
+  if(!cover||!cover.size)return notice('Selecione a folha de rosto.','error');
+  if(manuscript.size>25*1024*1024)return notice('O manuscrito ultrapassa 25 MB.','error');
+  if(cover.size>10*1024*1024)return notice('A folha de rosto ultrapassa 10 MB.','error');
+  const mext=(manuscript.name.split('.').pop()||'').toLowerCase(),cext=(cover.name.split('.').pop()||'').toLowerCase();
+  if(!['pdf','docx'].includes(mext))return notice('O manuscrito deve ser PDF ou DOCX.','error');
+  if(!['pdf','docx'].includes(cext))return notice('A folha de rosto deve ser PDF ou DOCX.','error');
+  const btn=form.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Enviando…';
+  let manuscriptPath=null,coverPath=null;
+  try{
+    manuscriptPath=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(manuscript.name)}`;
+    coverPath=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(cover.name)}`;
+    let up=await supabase.storage.from('manuscripts').upload(manuscriptPath,manuscript,{upsert:false,contentType:manuscript.type||undefined});
+    if(up.error)throw up.error;
+    up=await supabase.storage.from('cover-sheets').upload(coverPath,cover,{upsert:false,contentType:cover.type||undefined});
+    if(up.error)throw up.error;
+    const {error}=await supabase.from('submissions').insert({
+      author_id:currentUser.id,title:fd.get('title'),abstract:fd.get('abstract'),keywords:fd.get('keywords'),area:fd.get('area'),
+      manuscript_path:manuscriptPath,cover_sheet_path:coverPath
+    });
+    if(error)throw error;
+    form.reset();
+    notice('Submissão enviada com sucesso. Manuscrito anonimizado e folha de rosto foram armazenados separadamente.','ok');
+    await loadAuthor();
+    activatePortalModule('my-submissions');
+  }catch(err){
+    if(manuscriptPath||coverPath){
+      const jobs=[];
+      if(manuscriptPath)jobs.push(supabase.storage.from('manuscripts').remove([manuscriptPath]));
+      if(coverPath)jobs.push(supabase.storage.from('cover-sheets').remove([coverPath]));
+      if(jobs.length)await Promise.allSettled(jobs);
+    }
+    notice('Falha ao submeter: '+err.message,'error');
+  }finally{btn.disabled=false;btn.textContent='Enviar submissão'}
+});
 
-async function loadAuthor(){const box=$('#author-submissions');box.innerHTML='<div class="empty-msg">Carregando…</div>';const {data,error}=await supabase.from('submissions').select('*').eq('author_id',currentUser.id).order('submitted_at',{ascending:false});if(error){box.innerHTML=empty(error.message);return}if(!data?.length){box.innerHTML=empty('Nenhuma submissão ainda.');return}box.innerHTML='';for(const s of data){let feedback=[];try{const r=await supabase.rpc('author_review_feedback',{p_submission_id:s.id});feedback=r.data||[]}catch{}const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[s.status]||s.status)}</span><span>${esc(s.code||'')}</span><span>${fmt(s.submitted_at)}</span></div><h3>${esc(s.title)}</h3><p>${esc(s.area||'')}</p><div class="item-actions"><button class="btn manuscript-btn" type="button">Baixar manuscrito</button></div>${feedback.length?`<div class="review-block"><strong>Pareceres liberados</strong>${feedback.map((r,i)=>`<p><b>Parecer ${i+1}:</b> ${esc(r.comments_to_author||'Sem comentário textual.')} <em>(${esc(r.recommendation||'')})</em></p>`).join('')}</div>`:''}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};box.appendChild(div)}}
+async function loadAuthor(){const box=$('#author-submissions');box.innerHTML='<div class="empty-msg">Carregando…</div>';const {data,error}=await supabase.from('submissions').select('*').eq('author_id',currentUser.id).order('submitted_at',{ascending:false});if(error){box.innerHTML=empty(error.message);return}if(!data?.length){box.innerHTML=empty('Nenhuma submissão ainda.');return}box.innerHTML='';for(const s of data){let feedback=[];try{const r=await supabase.rpc('author_review_feedback',{p_submission_id:s.id});feedback=r.data||[]}catch{}const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[s.status]||s.status)}</span><span>${esc(s.code||'')}</span><span>${fmt(s.submitted_at)}</span></div><h3>${esc(s.title)}</h3><p>${esc(s.area||'')}</p><div class="file-separation"><div class="file-card manuscript-file"><span class="file-kind">ARQUIVO PARA AVALIAÇÃO</span><strong>Manuscrito anonimizado</strong><small>Sem identificação dos autores · acessível aos pareceristas</small><button class="btn manuscript-btn" type="button">Baixar manuscrito</button></div><div class="file-card cover-file"><span class="file-kind">IDENTIFICAÇÃO DOS AUTORES</span><strong>Folha de rosto</strong><small>Nomes, afiliações, ORCID e autor correspondente · não é exibida aos pareceristas</small>${s.cover_sheet_path?`<button class="btn cover-btn" type="button">Baixar folha de rosto</button>`:`<span class="file-missing">Não disponível nesta submissão anterior</span>`}</div></div>${feedback.length?`<div class="review-block"><strong>Pareceres liberados</strong>${feedback.map((r,i)=>`<p><b>Parecer ${i+1}:</b> ${esc(r.comments_to_author||'Sem comentário textual.')} <em>(${esc(r.recommendation||'')})</em></p>`).join('')}</div>`:''}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};const coverBtn=div.querySelector('.cover-btn');if(coverBtn)coverBtn.onclick=async()=>{try{location.href=await signed('cover-sheets',s.cover_sheet_path)}catch(e){notice(e.message,'error')}};const coverBtn=div.querySelector('.cover-btn');if(coverBtn)coverBtn.onclick=async()=>{try{location.href=await signed('cover-sheets',s.cover_sheet_path)}catch(e){notice(e.message,'error')}};box.appendChild(div)}}
 
 async function loadReviewer(){const box=$('#reviewer-assignments');box.innerHTML='<div class="empty-msg">Carregando…</div>';const {data,error}=await supabase.rpc('reviewer_assigned_submissions');if(error){box.innerHTML=empty(error.message);return}if(!data?.length){box.innerHTML=empty('Nenhum artigo atribuído a você.');return}const {data:reviews}=await supabase.from('reviews').select('*').eq('reviewer_id',currentUser.id);const byAssign=Object.fromEntries((reviews||[]).map(r=>[r.assignment_id,r]));box.innerHTML='';for(const a of data){const existing=byAssign[a.assignment_id];const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[a.status]||a.status)}</span><span>${esc(a.code||'')}</span><span>Prazo: ${a.due_at?fmt(a.due_at):'não definido'}</span></div><h3>${esc(a.title)}</h3><p><strong>Área:</strong> ${esc(a.area||'—')}</p><p><strong>Resumo:</strong> ${esc(a.abstract||'—')}</p><p><strong>Palavras-chave:</strong> ${esc(a.keywords||'—')}</p><div class="item-actions"><button class="btn manuscript-btn" type="button">Baixar manuscrito anonimizado</button></div>${existing?.submitted?`<div class="review-block"><strong>Parecer enviado em ${fmt(existing.submitted_at)}</strong><p>${esc(existing.comments_to_author||'')}</p><p><b>Recomendação:</b> ${esc(existing.recommendation||'')}</p></div>`:`<form class="review-form"><label>Comentários aos autores<textarea name="comments_to_author" rows="6" required>${esc(existing?.comments_to_author||'')}</textarea></label><label>Comentários confidenciais ao Editor-Chefe<textarea name="confidential" rows="4">${esc(existing?.confidential_comments_to_editor||'')}</textarea></label><label>Recomendação<select name="recommendation" required><option value="">Selecione</option><option value="accept">Aceitar</option><option value="minor_revision">Revisão menor</option><option value="major_revision">Revisão maior</option><option value="reject">Rejeitar</option></select></label><label>Arquivo de parecer anotado (opcional)<input type="file" name="review_file" accept=".pdf,.docx"></label><button class="btn primary" type="submit">Enviar parecer final</button></form>`}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',a.manuscript_path)}catch(e){notice(e.message,'error')}};const form=div.querySelector('.review-form');if(form)form.onsubmit=async ev=>{ev.preventDefault();if(!confirm('Enviar o parecer como final? Ele ficará visível ao Editor-Chefe.'))return;const fd=new FormData(form);const btn=form.querySelector('button');btn.disabled=true;try{let reviewPath=existing?.review_file_path||null,file=fd.get('review_file');if(file?.size){if(file.size>10*1024*1024)throw new Error('Arquivo de parecer maior que 10 MB.');reviewPath=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;const up=await supabase.storage.from('reviews').upload(reviewPath,file,{upsert:false});if(up.error)throw up.error}const payload={assignment_id:a.assignment_id,reviewer_id:currentUser.id,comments_to_author:fd.get('comments_to_author'),confidential_comments_to_editor:fd.get('confidential'),recommendation:fd.get('recommendation'),review_file_path:reviewPath,submitted:true,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()};const q=existing?supabase.from('reviews').update(payload).eq('id',existing.id):supabase.from('reviews').insert(payload);const {error}=await q;if(error)throw error;await supabase.from('review_assignments').update({completed_at:new Date().toISOString()}).eq('id',a.assignment_id);notice('Parecer enviado ao Editor-Chefe.');await loadReviewer()}catch(e){notice(e.message,'error')}finally{btn.disabled=false}};box.appendChild(div)}}
 
@@ -165,8 +246,11 @@ async function renderEditorSubmissions(subs,assign,reviews,messages){
         <p><b>Área:</b> ${esc(s.area||'—')}</p>
         <p><b>Resumo:</b> ${esc(s.abstract||'—')}</p>
       </details>
+      <div class="file-separation editor-files">
+        <div class="file-card manuscript-file"><span class="file-kind">ARQUIVO PARA PARECERISTAS</span><strong>Manuscrito anonimizado</strong><small>Este é o arquivo utilizado na avaliação duplo-cega.</small><button class="btn manuscript-btn">Baixar manuscrito anonimizado</button></div>
+        <div class="file-card cover-file"><span class="file-kind">USO EXCLUSIVO EDITORIAL</span><strong>Folha de rosto</strong><small>Contém identificação dos autores. Nunca é disponibilizada aos pareceristas.</small>${s.cover_sheet_path?'<button class="btn cover-btn">Baixar folha de rosto</button>':'<span class="file-missing">Não enviada — submissão anterior à separação dos arquivos</span>'}</div>
+      </div>
       <div class="editor-action-bar">
-        <button class="btn manuscript-btn">Baixar manuscrito</button>
         <select class="status-select">${(currentProfile.role==='managing_editor'?['submitted','under_screening','under_review','revision_requested','withdrawn']:['submitted','under_screening','under_review','revision_requested','accepted','rejected','withdrawn']).map(x=>`<option value="${x}" ${s.status===x?'selected':''}>${labels[x]}</option>`).join('')}</select>
         <button class="btn release-resubmission-btn" type="button">Liberar reenvio</button>
       </div>
