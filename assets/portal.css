@@ -158,3 +158,16 @@
 .manuscript-file .btn{background:#0b5962;color:#fff;border-color:#0b5962}
 .cover-file .btn{background:#8a6b1f;color:#fff;border-color:#8a6b1f}
 .reviewer-inline-list{margin:.5rem 0 .25rem}
+
+.panel-divider{border:0;border-top:1px solid #dfe8e8;margin:1.4rem 0}
+.communication-send-row{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+.communication-reply-note{font-size:.76rem;color:#60757a}
+.communication-history-head{display:flex;justify-content:space-between;gap:1rem;align-items:end;margin-bottom:1rem}
+.communication-history-head h3{margin:.25rem 0 0;color:#07383f}
+.communication-history-head select{border:1px solid #cbdada;border-radius:9px;padding:.62rem .7rem;background:#fff}
+.communication-history-card{display:grid;gap:.45rem}
+.communication-history-card h3{margin:.1rem 0}
+.communication-history-meta{display:flex;gap:.45rem;flex-wrap:wrap;font-size:.72rem;color:#60757a}
+.communication-message-preview{white-space:pre-wrap;line-height:1.5}
+.communication-error{padding:.65rem .75rem;border-left:3px solid #a84a3a;background:#fff3f0;border-radius:6px;color:#7d2d2d}
+@media(max-width:700px){.communication-history-head{flex-direction:column;align-items:stretch}}
