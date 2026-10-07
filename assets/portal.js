@@ -77,7 +77,102 @@ async function loadAuthor(){const box=$('#author-submissions');box.innerHTML='<d
 
 async function loadReviewer(){const box=$('#reviewer-assignments');box.innerHTML='<div class="empty-msg">Carregando…</div>';const {data,error}=await supabase.rpc('reviewer_assigned_submissions');if(error){box.innerHTML=empty(error.message);return}if(!data?.length){box.innerHTML=empty('Nenhum artigo atribuído a você.');return}const {data:reviews}=await supabase.from('reviews').select('*').eq('reviewer_id',currentUser.id);const byAssign=Object.fromEntries((reviews||[]).map(r=>[r.assignment_id,r]));box.innerHTML='';for(const a of data){const existing=byAssign[a.assignment_id];const div=document.createElement('article');div.className='item-card';div.innerHTML=`<div class="item-meta"><span class="status">${esc(labels[a.status]||a.status)}</span><span>${esc(a.code||'')}</span><span>Prazo: ${a.due_at?fmt(a.due_at):'não definido'}</span></div><h3>${esc(a.title)}</h3><p><strong>Área:</strong> ${esc(a.area||'—')}</p><p><strong>Resumo:</strong> ${esc(a.abstract||'—')}</p><p><strong>Palavras-chave:</strong> ${esc(a.keywords||'—')}</p><div class="reviewer-manuscript-box"><div class="file-visual-head"><span class="file-icon">📄</span><div><span class="file-kind">ARTIGO PARA AVALIAÇÃO</span><strong>Manuscrito anonimizado</strong></div></div><span class="file-access-badge reviewer-access">✓ ÚNICO ARQUIVO DISPONÍVEL AO PARECERISTA</span><small>A folha de rosto e a identidade dos autores não são exibidas nesta área.</small><button class="btn manuscript-btn" type="button">Abrir ARTIGO / MANUSCRITO</button></div>${existing?.submitted?`<div class="review-block"><strong>Parecer enviado em ${fmt(existing.submitted_at)}</strong><p>${esc(existing.comments_to_author||'')}</p><p><b>Recomendação:</b> ${esc(existing.recommendation||'')}</p></div>`:`<form class="review-form"><label>Comentários aos autores<textarea name="comments_to_author" rows="6" required>${esc(existing?.comments_to_author||'')}</textarea></label><label>Comentários confidenciais ao Editor-Chefe<textarea name="confidential" rows="4">${esc(existing?.confidential_comments_to_editor||'')}</textarea></label><label>Recomendação<select name="recommendation" required><option value="">Selecione</option><option value="accept">Aceitar</option><option value="minor_revision">Revisão menor</option><option value="major_revision">Revisão maior</option><option value="reject">Rejeitar</option></select></label><label>Arquivo de parecer anotado (opcional)<input type="file" name="review_file" accept=".pdf,.docx"></label><button class="btn primary" type="submit">Enviar parecer final</button></form>`}`;div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',a.manuscript_path)}catch(e){notice(e.message,'error')}};const form=div.querySelector('.review-form');if(form)form.onsubmit=async ev=>{ev.preventDefault();if(!confirm('Enviar o parecer como final? Ele ficará visível ao Editor-Chefe.'))return;const fd=new FormData(form);const btn=form.querySelector('button');btn.disabled=true;try{let reviewPath=existing?.review_file_path||null,file=fd.get('review_file');if(file?.size){if(file.size>10*1024*1024)throw new Error('Arquivo de parecer maior que 10 MB.');reviewPath=`${currentUser.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;const up=await supabase.storage.from('reviews').upload(reviewPath,file,{upsert:false});if(up.error)throw up.error}const payload={assignment_id:a.assignment_id,reviewer_id:currentUser.id,comments_to_author:fd.get('comments_to_author'),confidential_comments_to_editor:fd.get('confidential'),recommendation:fd.get('recommendation'),review_file_path:reviewPath,submitted:true,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()};const q=existing?supabase.from('reviews').update(payload).eq('id',existing.id):supabase.from('reviews').insert(payload);const {error}=await q;if(error)throw error;await supabase.from('review_assignments').update({completed_at:new Date().toISOString()}).eq('id',a.assignment_id);notice('Parecer enviado ao Editor-Chefe.');await loadReviewer()}catch(e){notice(e.message,'error')}finally{btn.disabled=false}};box.appendChild(div)}}
 
-async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false})]);if(ps.error||ss.error||aa.error||rr.error||mm.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[])}
+async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm,cc]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false})]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[])}
+
+function renderEditorialCommunications(submissions,profiles,communications){
+  const form=$('#editorial-communication-form'),recipient=$('#comm-recipient'),submission=$('#comm-submission'),type=$('#comm-type'),template=$('#comm-template'),subject=$('#comm-subject'),message=$('#comm-message'),history=$('#communication-history'),historyFilter=$('#comm-history-filter');
+  if(!form||!recipient||!submission||!history)return;
+
+  const activeRecipients=profiles.filter(p=>p.active&&['author','reviewer','managing_editor','editor_chief'].includes(p.role)&&p.id!==currentUser.id);
+  recipient.innerHTML='<option value="">Selecione</option>'+activeRecipients.map(p=>`<option value="${p.id}">${esc(p.full_name||p.email)} · ${esc(labels[p.role]||p.role)} · ${esc(p.email)}</option>`).join('');
+  submission.innerHTML='<option value="">Sem vínculo com artigo</option>'+submissions.filter(s=>!s.is_demo).map(s=>`<option value="${s.id}">${esc(s.code||'')} · ${esc(s.title)}</option>`).join('');
+
+  const templates={
+    review_invitation:{
+      type:'review_invitation',
+      subject:'SETARI · Convite para avaliação de manuscrito',
+      message:'Prezado(a) Parecerista,\n\nGostaríamos de convidá-lo(a) para avaliar o manuscrito indicado nesta comunicação. A avaliação deve ser realizada pela Área Restrita da SETARI, observando o processo duplo-cego e a confidencialidade editorial.\n\nAgradecemos antecipadamente pela colaboração com a revista.\n\nSETARI Editorial Office'
+    },
+    review_reminder:{
+      type:'review_followup',
+      subject:'SETARI · Lembrete de parecer pendente',
+      message:'Prezado(a) Parecerista,\n\nEste é um lembrete sobre o parecer ainda pendente para o manuscrito indicado nesta comunicação. Pedimos, por gentileza, que verifique a Área Restrita da SETARI e, se possível, conclua a avaliação dentro do prazo estabelecido.\n\nCaso necessite de prazo adicional, responda a este e-mail.\n\nSETARI Editorial Office'
+    },
+    author_review:{
+      type:'author_update',
+      subject:'SETARI · Atualização sobre sua submissão',
+      message:'Prezado(a) Autor(a),\n\nSeu manuscrito segue em fluxo editorial na SETARI. Esta mensagem tem o objetivo de mantê-lo(a) informado(a) sobre o andamento da submissão indicada.\n\nQuando houver uma nova decisão ou parecer liberado, a informação também ficará disponível na Área Restrita.\n\nSETARI Editorial Office'
+    },
+    author_revision:{
+      type:'revision',
+      subject:'SETARI · Solicitação de revisão do manuscrito',
+      message:'Prezado(a) Autor(a),\n\nApós análise editorial, solicitamos a revisão do manuscrito indicado nesta comunicação. Consulte as orientações e os pareceres disponibilizados na Área Restrita e envie a versão revisada conforme solicitado.\n\nSETARI Editorial Office'
+    },
+    general:{
+      type:'general',
+      subject:'SETARI · Comunicação Editorial',
+      message:'Prezado(a),\n\nEscrevemos em nome da SETARI Editorial Office.\n\n[Digite aqui a mensagem.]\n\nAtenciosamente,\nSETARI Editorial Office'
+    }
+  };
+
+  template.onchange=()=>{
+    const t=templates[template.value];
+    if(!t)return;
+    type.value=t.type;subject.value=t.subject;message.value=t.message;
+  };
+
+  const profileMap=Object.fromEntries(profiles.map(p=>[p.id,p]));
+  const subMap=Object.fromEntries(submissions.map(s=>[s.id,s]));
+
+  const renderHistory=()=>{
+    const filter=historyFilter?.value||'';
+    const rows=communications.filter(c=>!filter||c.recipient_role===filter);
+    if(!rows.length){history.innerHTML=empty('Nenhuma comunicação registrada.');return}
+    history.innerHTML=rows.map(c=>{
+      const p=profileMap[c.recipient_id];
+      const s=c.submission_id?subMap[c.submission_id]:null;
+      const state=c.email_status==='sent'?'Enviado':c.email_status==='failed'?'Falhou':c.email_status==='waiting_domain'?'Aguardando configuração':'Pendente';
+      return `<article class="item-card communication-history-card"><div class="communication-history-meta"><span class="status">${esc(state)}</span><span>${fmt(c.created_at)}</span><span>${esc(labels[c.recipient_role]||c.recipient_role)}</span></div><h3>${esc(c.subject)}</h3><p><b>Para:</b> ${esc(p?.full_name||c.recipient_email||'Destinatário')} · ${esc(c.recipient_email||p?.email||'')}</p>${s?`<p><b>Artigo:</b> ${esc(s.code||'')} · ${esc(s.title||'')}</p>`:''}<details><summary>Ver mensagem</summary><p class="communication-message-preview">${esc(c.message)}</p>${c.email_error?`<p class="communication-error"><b>Erro:</b> ${esc(c.email_error)}</p>`:''}</details></article>`;
+    }).join('');
+  };
+  if(historyFilter)historyFilter.onchange=renderHistory;
+  renderHistory();
+
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const recipientId=recipient.value;
+    if(!recipientId)return notice('Selecione o destinatário.','error');
+    const btn=form.querySelector('button[type="submit"]');
+    btn.disabled=true;
+    try{
+      const {data:id,error}=await supabase.rpc('create_editorial_communication',{
+        p_recipient_id:recipientId,
+        p_submission_id:submission.value||null,
+        p_subject:subject.value.trim(),
+        p_message:message.value.trim(),
+        p_communication_type:type.value||'general'
+      });
+      if(error)throw error;
+
+      const {data:sendData,error:sendError}=await supabase.functions.invoke('send-editorial-communication',{body:{communication_id:id}});
+      if(sendError)throw sendError;
+
+      if(sendData?.email_status==='waiting_domain'){
+        notice('Comunicação registrada. O envio externo aguarda a configuração do domínio/remetente no serviço de e-mail.','error');
+      }else{
+        notice('E-mail enviado e comunicação registrada.');
+      }
+      form.reset();
+      await loadEditor();
+      showPortalTab('editor','communications');
+    }catch(err){
+      notice('Não foi possível enviar a comunicação: '+(err?.message||err),'error');
+    }finally{
+      btn.disabled=false;
+    }
+  };
+}
+
 function editorWorkflowState(s,assignments,reviews){
   const submittedReviews=reviews.filter(r=>r.submitted);
   const pendingAssignments=assignments.filter(a=>!a.completed_at);
