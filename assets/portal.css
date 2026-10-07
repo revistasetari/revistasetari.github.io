@@ -143,3 +143,18 @@
 .file-separation.editor-files{gap:1.2rem}
 .manuscript-file{border:2px solid #0b5962;background:#f5fbfc}
 .cover-file{border:2px solid #a7822d;background:#fffaf1}
+
+/* Restore the visually clear two-document layout */
+.editor-files,.file-separation{align-items:stretch}
+.file-card{position:relative}
+.manuscript-file{border:2px solid #6fa2aa;background:#f7fbfc;box-shadow:inset 0 4px 0 #5d9ba6}
+.cover-file{border:2px solid #c19a45;background:#fffaf1;box-shadow:inset 0 4px 0 #b7953c}
+.file-visual-head{display:flex;gap:.75rem;align-items:center}
+.file-visual-head .file-kind{font-size:.66rem;font-weight:900;letter-spacing:.08em;color:#48666b}
+.file-visual-head strong{font-size:1.02rem;color:#0b2f35}
+.file-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font-size:1.4rem;flex:0 0 auto}
+.manuscript-file .file-icon{background:#dceff3}
+.cover-file .file-icon{background:#f5e9c9}
+.manuscript-file .btn{background:#0b5962;color:#fff;border-color:#0b5962}
+.cover-file .btn{background:#8a6b1f;color:#fff;border-color:#8a6b1f}
+.reviewer-inline-list{margin:.5rem 0 .25rem}
