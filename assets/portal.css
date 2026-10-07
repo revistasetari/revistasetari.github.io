@@ -198,3 +198,15 @@
 .article-communication-send-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
 .article-communication-send-row span{font-size:.72rem;color:#66797c}
 @media(max-width:800px){.article-communication-row{grid-template-columns:1fr}.article-communications-head{align-items:flex-start}.article-communications-count{min-width:76px}}
+
+.article-author-email{margin-top:1rem}
+.article-email-last-status{display:grid;gap:.18rem;justify-items:end;min-width:220px}
+.article-email-last-status strong{font-size:.8rem;color:#173b40}
+.article-email-last-status small{font-size:.68rem;color:#718487}
+.article-email-never{font-size:.72rem;color:#718487}
+.article-email-history{display:grid;gap:.45rem;margin:.8rem 0;padding:.7rem;border:1px solid #dfe8e8;border-radius:10px;background:#fff}
+.article-email-history>strong{font-size:.75rem;color:#315d64}
+.article-email-history-row{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;padding:.45rem .5rem;border-radius:8px;background:#f7fbfc}
+.article-email-history-row span:nth-child(2){font-size:.74rem;color:#40585d}
+.article-email-history-row small{font-size:.66rem;color:#718487}
+@media(max-width:700px){.article-email-last-status{justify-items:start}.article-email-history-row{grid-template-columns:1fr}}
