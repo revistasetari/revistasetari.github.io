@@ -358,75 +358,59 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         ${as.length?`<div class="assigned-list">${as.map(a=>`<span class="${a.completed_at?'done':'pending'}">${esc(profileMap[a.reviewer_id]?.full_name||profileMap[a.reviewer_id]?.email||'Parecerista')} · ${a.completed_at?'parecer recebido':'pendente'}${a.due_at?' · '+fmt(a.due_at):''}</span>`).join('')}</div>`:'<p class="muted-line">Nenhum parecerista atribuído.</p>'}
       </div>
       ${rs.length?`<details class="review-block"><summary><strong>Pareceres recebidos (${received})</strong></summary>${rs.filter(r=>r.submitted).map((r,i)=>`<div class="review-block"><p><b>Parecerista:</b> ${esc(profileMap[r.reviewer_id]?.full_name||profileMap[r.reviewer_id]?.email||'')}</p><p><b>Recomendação:</b> ${esc(r.recommendation||'')}</p><p><b>Comentários aos autores:</b> ${esc(r.comments_to_author||'')}</p>${r.review_file_path?`<button class="btn review-file" data-path="${esc(r.review_file_path)}">Baixar arquivo do parecer</button>`:''}</div>`).join('')}${confidential}</details>`:''}
-      <section class="article-communications">
-        <div class="article-communications-head">
+      <section class="author-communication article-author-email">
+        <div class="communication-head">
           <div>
-            <span class="article-communications-kicker">COMUNICAÇÕES DESTE ARTIGO</span>
-            <strong>Autor e pareceristas</strong>
-            <small>Envios e histórico ficam vinculados a esta submissão.</small>
+            <strong>Comunicar autor</strong>
+            <small>Envio vinculado a este artigo. O histórico permanece registrado aqui.</small>
           </div>
-          <div class="article-communications-count"><b>${sentCommunicationCount}</b><span>e-mail(s) enviado(s)</span></div>
+          ${lastMessage
+            ? `<div class="article-email-last-status">
+                <span class="article-communication-status comm-${esc(lastMessage.email_status||'pending')}">${lastMessage.email_status==='sent'?'ENVIADO':lastMessage.email_status==='failed'?'FALHOU':lastMessage.email_status==='waiting_domain'?'AGUARDANDO':'PENDENTE'}</span>
+                <strong>${esc(lastMessage.recipient_email||author?.email||'')}</strong>
+                <small>${lastMessage.email_sent_at?'Enviado em '+fmt(lastMessage.email_sent_at):'Registrado em '+fmt(lastMessage.created_at)}</small>
+              </div>`
+            : '<span class="article-email-never">Nenhum e-mail enviado ainda</span>'}
         </div>
-        <div class="article-communication-history">
-          ${articleHistory.length
-            ? articleHistory.slice(0,6).map(c=>{
-                const p=profileMap[c.recipient_id];
-                const recipientName=p?.full_name||c.recipient_email||'Destinatário';
-                const roleLabel=labels[c.recipient_role]||c.recipient_role||'';
-                const statusLabel=c.email_status==='sent'?'ENVIADO':c.email_status==='failed'?'FALHOU':c.email_status==='waiting_domain'?'AGUARDANDO':'PENDENTE';
-                return `<div class="article-communication-row">
-                  <span class="article-communication-status comm-${esc(c.email_status||'pending')}">${statusLabel}</span>
-                  <div class="article-communication-who"><strong>${esc(recipientName)}</strong><small>${esc(roleLabel)} · ${fmt(c.created_at)}</small></div>
-                  <div class="article-communication-subject">${esc(c.subject||'Comunicação editorial')}</div>
-                </div>`;
-              }).join('')
-            : '<div class="article-communication-empty">Nenhuma comunicação enviada para este artigo.</div>'}
+        ${formalMessages.length
+          ? `<div class="article-email-history">
+              <strong>Histórico deste artigo</strong>
+              ${formalMessages.slice(0,5).map(m=>`<div class="article-email-history-row">
+                <span class="article-communication-status comm-${esc(m.email_status||'pending')}">${m.email_status==='sent'?'ENVIADO':m.email_status==='failed'?'FALHOU':m.email_status==='waiting_domain'?'AGUARDANDO':'PENDENTE'}</span>
+                <span>${esc(m.subject)}</span>
+                <small>${fmt(m.created_at)}</small>
+              </div>`).join('')}
+            </div>`
+          : ''}
+        <input class="article-comm-recipient" type="hidden" value="${author?.id||''}" data-role="author">
+        <div class="form-row">
+          <label>Tipo de comunicação
+            <select class="article-comm-type">
+              <option value="general">Comunicação geral</option>
+              <option value="author_update">Artigo em avaliação</option>
+              <option value="revision_requested">Solicitar revisão</option>
+              ${currentProfile.role==='editor_chief'?'<option value="accepted">Comunicar aceite</option><option value="rejected">Comunicar rejeição</option>':''}
+            </select>
+          </label>
+          <label>Modelo rápido
+            <select class="article-comm-template">
+              <option value="">Escolha um modelo</option>
+              <option value="author_review">Artigo em avaliação</option>
+              <option value="author_revision">Solicitação de revisão</option>
+              ${currentProfile.role==='editor_chief'?'<option value="accept">Aceite</option><option value="reject">Rejeição</option>':''}
+            </select>
+          </label>
         </div>
-        <details class="article-communication-compose">
-          <summary>✉ Nova comunicação deste artigo</summary>
-          <div class="article-communication-form">
-            <div class="form-row">
-              <label>Enviar para
-                <select class="article-comm-recipient">
-                  <option value="${author?.id||''}" data-role="author">${esc(author?.full_name||author?.email||'Autor')} · Autor</option>
-                  ${as.map(a=>{const p=profileMap[a.reviewer_id];return `<option value="${a.reviewer_id}" data-role="reviewer">${esc(p?.full_name||p?.email||'Parecerista')} · Parecerista</option>`}).join('')}
-                </select>
-              </label>
-              <label>Tipo
-                <select class="article-comm-type">
-                  <option value="general">Comunicação geral</option>
-                  <option value="author_update">Atualização ao autor</option>
-                  <option value="review_invitation">Convite ao parecerista</option>
-                  <option value="review_followup">Lembrete de parecer</option>
-                  <option value="revision_requested">Solicitar revisão ao autor</option>
-                  ${currentProfile.role==='editor_chief'?'<option value="accepted">Comunicar aceite ao autor</option><option value="rejected">Comunicar rejeição ao autor</option>':''}
-                </select>
-              </label>
-            </div>
-            <div class="form-row">
-              <label>Modelo rápido
-                <select class="article-comm-template">
-                  <option value="">Escolha um modelo</option>
-                  <option value="author_review">Autor · artigo em avaliação</option>
-                  <option value="author_revision">Autor · solicitar revisão</option>
-                  <option value="review_invitation">Parecerista · convite</option>
-                  <option value="review_reminder">Parecerista · lembrete</option>
-                  ${currentProfile.role==='editor_chief'?'<option value="accept">Autor · aceite</option><option value="reject">Autor · rejeição</option>':''}
-                </select>
-              </label>
-              <label>Assunto
-                <input class="article-comm-subject" type="text" value="SETARI · ${esc(s.code||'Submissão')}">
-              </label>
-            </div>
-            <label>Mensagem
-              <textarea class="article-comm-message" rows="6" placeholder="Escreva a mensagem vinculada a este artigo..."></textarea>
-            </label>
-            <div class="article-communication-send-row">
-              <button class="btn primary article-comm-send" type="button">Enviar e-mail deste artigo</button>
-              <span>Responder para: setarijournal@gmail.com</span>
-            </div>
-          </div>
-        </details>
+        <label>Assunto
+          <input class="article-comm-subject" type="text" value="SETARI · ${esc(s.code||'Submissão')}">
+        </label>
+        <label>Mensagem
+          <textarea class="article-comm-message" rows="6" placeholder="Escreva a mensagem que será enviada ao autor..."></textarea>
+        </label>
+        <div class="article-communication-send-row">
+          <button class="btn primary article-comm-send" type="button">Registrar e enviar e-mail</button>
+          <span>Para: <b>${esc(author?.email||'')}</b> · Respostas: setarijournal@gmail.com</span>
+        </div>
       </section>`;
 
     div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};
@@ -502,17 +486,13 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       commSubject.value=t.subject;
       commMessage.value=t.message;
       if(['review_invitation','review_followup'].includes(t.type)){
-        const reviewerOption=[...commRecipient.options].find(o=>o.dataset.role==='reviewer');
-        if(reviewerOption)commRecipient.value=reviewerOption.value;
-      }else if(author?.id){
-        commRecipient.value=author.id;
       }
     };
 
     div.querySelector('.article-comm-send').onclick=async()=>{
       const recipientId=commRecipient.value;
-      const selected=commRecipient.selectedOptions[0];
-      const recipientRole=selected?.dataset.role||'';
+      const selected=null;
+      const recipientRole='author';
       const typeValue=commType.value;
       const text=commMessage.value.trim();
       const subject=commSubject.value.trim();
@@ -521,7 +501,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       const formalDecision=['revision_requested','accepted','rejected'].includes(typeValue);
       if(formalDecision&&recipientRole!=='author')return notice('Decisões editoriais formais devem ser enviadas ao autor.','error');
       if(!subject&&!formalDecision)return notice('Informe o assunto do e-mail.','error');
-      const recipientLabel=selected?.textContent||'destinatário';
+      const recipientLabel=author?.email||'autor';
       if(!confirm('Enviar esta comunicação de '+(s.code||'este artigo')+' para '+recipientLabel+'?'))return;
 
       const btn=div.querySelector('.article-comm-send');
