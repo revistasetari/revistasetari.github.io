@@ -121,3 +121,12 @@
 .reviewer-inline-name{font-weight:900}
 .reviewer-inline-state{font-size:.66rem;opacity:.9}
 .reviewer-inline-empty{font-size:.72rem;color:#718487}
+
+.file-section-title{display:flex;align-items:center;gap:.55rem;padding:.72rem .85rem;margin:-1rem -1rem .55rem;border-radius:12px 12px 0 0;font-weight:900;letter-spacing:.035em;font-size:.82rem}
+.manuscript-title{background:#0b5962;color:#fff}
+.cover-title{background:#a7822d;color:#fff}
+.file-section-icon{font-size:1.15rem}
+.file-main-name{font-size:1.05rem;color:#173b40}
+.manuscript-file,.cover-file{overflow:hidden}
+.manuscript-file{border-width:2px}
+.cover-file{border-width:2px}
