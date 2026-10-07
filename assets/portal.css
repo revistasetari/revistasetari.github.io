@@ -130,3 +130,16 @@
 .manuscript-file,.cover-file{overflow:hidden}
 .manuscript-file{border-width:2px}
 .cover-file{border-width:2px}
+
+.document-banner{display:flex;align-items:center;gap:.75rem;margin:-1rem -1rem .8rem;padding:.9rem 1rem;color:#fff}
+.manuscript-banner{background:#0b5962}
+.cover-banner{background:#a7822d}
+.document-number{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);font-size:1.15rem;font-weight:900;flex:0 0 auto}
+.document-banner>div{display:grid;gap:.08rem}
+.document-kicker{font-size:.64rem;font-weight:900;letter-spacing:.08em;opacity:.9}
+.document-banner strong{font-size:1.05rem;letter-spacing:.03em}
+.document-body{display:grid;gap:.48rem}
+.document-body .btn{justify-self:start;margin-top:.35rem}
+.file-separation.editor-files{gap:1.2rem}
+.manuscript-file{border:2px solid #0b5962;background:#f5fbfc}
+.cover-file{border:2px solid #a7822d;background:#fffaf1}
