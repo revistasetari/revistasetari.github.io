@@ -90,14 +90,14 @@ async function loadReviewer(){const box=$('#reviewer-assignments');box.innerHTML
 
 
 function certificateTypeLabel(type){
-  return type==='reviewer'?'Certificado de Parecerista Ad Hoc':type==='author_acceptance'?'Certificado de Aceite':'Certificado de Publicação';
+  return type==='reviewer'?'Certificado de Membro do Corpo de Pareceristas':type==='author_acceptance'?'Certificado de Aceite':'Certificado de Publicação';
 }
 function certificateBody(cert){
   const m=cert.metadata||{};
   const holder=esc(m.holder_name||currentProfile?.full_name||'');
   if(cert.certificate_type==='reviewer'){
     const d=m.activity_date?new Intl.DateTimeFormat('pt-BR',{dateStyle:'long',timeZone:'America/Sao_Paulo'}).format(new Date(m.activity_date)):'';
-    return `Certificamos que <strong>${holder}</strong>${m.institution?' ('+esc(m.institution)+')':''} atuou como <strong>Parecerista Ad Hoc</strong> da SETARI — Science, Engineering, Technology, Applied Research & Innovation, contribuindo com o processo de avaliação científica por pares${d?' em atividade concluída em '+esc(d):''}. Em respeito à confidencialidade editorial e ao processo duplo-cego, este certificado não identifica o manuscrito avaliado.`;
+    return `Certificamos que <strong>${holder}</strong>${m.institution?' ('+esc(m.institution)+')':''} atuou como <strong>Membro do Corpo de Pareceristas</strong> da SETARI — Science, Engineering, Technology, Applied Research & Innovation, contribuindo com o processo de avaliação científica por pares${d?' em atividade concluída em '+esc(d):''}. Em respeito à confidencialidade editorial e ao processo duplo-cego, este certificado não identifica o manuscrito avaliado.`;
   }
   if(cert.certificate_type==='author_acceptance'){
     const d=m.accepted_at?new Intl.DateTimeFormat('pt-BR',{dateStyle:'long',timeZone:'America/Sao_Paulo'}).format(new Date(m.accepted_at)):'';
