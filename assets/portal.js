@@ -159,23 +159,31 @@ async function loadEditorCertificates(){
     card.className='certificate-card';
     const released=!!o.certificate_id;
     const mail=released?latestMail[o.certificate_id]:null;
+    const mailSent=mail?.status==='sent';
+    const mailFailed=mail?.status==='failed';
     const mailText=mail
-      ? (mail.status==='sent'
-          ? 'Último envio: '+fmt(mail.sent_at||mail.created_at)+' · '+esc(mail.recipient_email)
-          : mail.status==='failed'
-            ? 'Última tentativa falhou · '+fmt(mail.created_at)
-            : 'Envio pendente · '+fmt(mail.created_at))
+      ? (mailSent
+          ? 'Enviado em '+fmt(mail.sent_at||mail.created_at)+' para '+esc(mail.recipient_email)
+          : mailFailed
+            ? 'Última tentativa falhou em '+fmt(mail.created_at)
+            : 'Envio pendente desde '+fmt(mail.created_at))
       : 'Ainda não enviado por e-mail';
 
+    if(mailSent)card.classList.add('certificate-email-sent');
+    if(mailFailed)card.classList.add('certificate-email-failed');
+
     card.innerHTML=`<div>
-      <span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span>
+      <div class="certificate-card-topline">
+        <span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span>
+        ${mailSent?'<span class="certificate-email-badge sent">✓ ENVIADO POR E-MAIL</span>':mailFailed?'<span class="certificate-email-badge failed">FALHA NO ENVIO</span>':''}
+      </div>
       <h3>${esc(o.holder_name||'')} · ${esc(o.detail||'')}</h3>
       <small>${esc(o.holder_email||'')}${o.institution?' · '+esc(o.institution):''}${released?' · Código '+esc(o.certificate_code):''}</small>
-      ${released?'<small class="certificate-mail-status">'+mailText+'</small>':''}
+      ${released?'<div class="certificate-mail-status '+(mailSent?'sent':mailFailed?'failed':'pending')+'">'+mailText+'</div>':''}
     </div>
     <div class="certificate-editor-actions">
       ${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}
-      ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">Enviar por e-mail</button>':''}
+      ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button>':''}
     </div>`;
 
     const release=card.querySelector('.release-certificate-btn');
