@@ -140,15 +140,44 @@ async function loadEditorCertificates(){
   const box=$('#editor-certificates');
   if(!box)return;
   box.innerHTML='<div class="empty-msg">Carregando certificados…</div>';
-  const {data,error}=await supabase.rpc('editor_certificate_candidates');
+
+  const [{data,error},{data:mailLog,error:mailError}]=await Promise.all([
+    supabase.rpc('editor_certificate_candidates'),
+    supabase.from('certificate_email_log').select('*').order('created_at',{ascending:false})
+  ]);
+
   if(error){box.innerHTML=empty('Não foi possível carregar: '+error.message);return}
+  if(mailError){box.innerHTML=empty('Não foi possível carregar o histórico de envios: '+mailError.message);return}
   if(!data?.length){box.innerHTML=empty('Nenhum certificado elegível no momento.');return}
+
+  const latestMail={};
+  (mailLog||[]).forEach(m=>{if(!latestMail[m.certificate_id])latestMail[m.certificate_id]=m});
+
   box.innerHTML='';
   data.forEach(o=>{
     const card=document.createElement('article');
     card.className='certificate-card';
     const released=!!o.certificate_id;
-    card.innerHTML=`<div><span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span><h3>${esc(o.holder_name||'')} · ${esc(o.detail||'')}</h3><small>${esc(o.holder_email||'')}${o.institution?' · '+esc(o.institution):''}${released?' · Código '+esc(o.certificate_code):''}</small></div><div class="certificate-editor-actions">${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}${released?'<button class="btn open-certificate-btn" type="button">Abrir</button>':''}</div>`;
+    const mail=released?latestMail[o.certificate_id]:null;
+    const mailText=mail
+      ? (mail.status==='sent'
+          ? 'Último envio: '+fmt(mail.sent_at||mail.created_at)+' · '+esc(mail.recipient_email)
+          : mail.status==='failed'
+            ? 'Última tentativa falhou · '+fmt(mail.created_at)
+            : 'Envio pendente · '+fmt(mail.created_at))
+      : 'Ainda não enviado por e-mail';
+
+    card.innerHTML=`<div>
+      <span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span>
+      <h3>${esc(o.holder_name||'')} · ${esc(o.detail||'')}</h3>
+      <small>${esc(o.holder_email||'')}${o.institution?' · '+esc(o.institution):''}${released?' · Código '+esc(o.certificate_code):''}</small>
+      ${released?'<small class="certificate-mail-status">'+mailText+'</small>':''}
+    </div>
+    <div class="certificate-editor-actions">
+      ${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}
+      ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">Enviar por e-mail</button>':''}
+    </div>`;
+
     const release=card.querySelector('.release-certificate-btn');
     if(release)release.onclick=async()=>{
       if(!confirm('Liberar este certificado para '+(o.holder_name||'o usuário')+'?'))return;
@@ -162,6 +191,7 @@ async function loadEditorCertificates(){
       }catch(err){notice('Não foi possível liberar o certificado: '+(err?.message||err),'error')}
       finally{release.disabled=false}
     };
+
     const open=card.querySelector('.open-certificate-btn');
     if(open)open.onclick=async()=>{
       try{
@@ -170,6 +200,28 @@ async function loadEditorCertificates(){
         printCertificate(cert);
       }catch(err){notice('Não foi possível abrir o certificado: '+(err?.message||err),'error')}
     };
+
+    const emailBtn=card.querySelector('.email-certificate-btn');
+    if(emailBtn)emailBtn.onclick=async()=>{
+      const destination=o.holder_email||'o destinatário';
+      if(!confirm('Enviar manualmente este certificado para '+destination+'? A SETARI receberá uma cópia oculta.'))return;
+      emailBtn.disabled=true;
+      const original=emailBtn.textContent;
+      emailBtn.textContent='Enviando…';
+      try{
+        const sent=await supabase.functions.invoke('send-certificate-email',{body:{certificate_id:o.certificate_id}});
+        if(sent.error)throw new Error(sent.error.message||'Falha ao chamar o serviço de envio.');
+        if(sent.data?.error)throw new Error(sent.data.error+(sent.data?.detail?' · '+sent.data.detail:''));
+        notice('Certificado enviado por e-mail com cópia para a SETARI.','ok');
+        await loadEditorCertificates();
+      }catch(err){
+        notice('Não foi possível enviar o certificado: '+(err?.message||err),'error');
+      }finally{
+        emailBtn.disabled=false;
+        emailBtn.textContent=original;
+      }
+    };
+
     box.appendChild(card);
   });
 }
