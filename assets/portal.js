@@ -49,6 +49,9 @@ document.addEventListener('click',async e=>{
       renderUsers(allProfiles);
     }catch(err){notice('Não foi possível atualizar a lista de usuários: '+err.message,'error')}
   }
+  if(scope==='editor'&&target==='certificates')await loadEditorCertificates();
+  if(scope==='author'&&target==='certificates')await loadCertificates('author');
+  if(scope==='reviewer'&&target==='certificates')await loadCertificates('reviewer');
 });
 function safeFileName(name){return name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-120)}
 async function signed(bucket,path,seconds=900){const {data,error}=await supabase.storage.from(bucket).createSignedUrl(path,seconds);if(error)throw error;return data.signedUrl}
@@ -126,20 +129,58 @@ async function loadCertificates(scope){
   box.innerHTML='';
   wanted.forEach(o=>{
     const card=document.createElement('article');card.className='certificate-card';
-    card.innerHTML=`<div><span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span><h3>${esc(o.detail||'')}</h3>${o.certificate_code?'<small>Código: '+esc(o.certificate_code)+'</small>':'<small>Disponível para emissão</small>'}</div><button class="btn certificate-action" type="button">${o.certificate_id?'Abrir certificado':'Emitir certificado'}</button>`;
+    card.innerHTML=`<div><span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span><h3>${esc(o.detail||'')}</h3>${o.certificate_code?'<small>Código: '+esc(o.certificate_code)+'</small>':'<small>Disponível para emissão</small>'}</div><button class="btn certificate-action" type="button">Abrir certificado</button>`;
     card.querySelector('.certificate-action').onclick=async()=>{
       try{
-        const {data:cert,error}=await supabase.rpc('issue_my_certificate',{p_type:o.certificate_type,p_reference_id:o.reference_id});
+        const {data:cert,error}=await supabase.from('certificate_issues').select('*').eq('id',o.certificate_id).single();
         if(error)throw error;
         printCertificate(cert);
-        await loadCertificates(scope);
-      }catch(err){notice('Não foi possível emitir o certificado: '+(err?.message||err),'error')}
+      }catch(err){notice('Não foi possível abrir o certificado: '+(err?.message||err),'error')}
     };
     box.appendChild(card);
   });
 }
 
-async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[])}
+
+async function loadEditorCertificates(){
+  const box=$('#editor-certificates');
+  if(!box)return;
+  box.innerHTML='<div class="empty-msg">Carregando certificados…</div>';
+  const {data,error}=await supabase.rpc('editor_certificate_candidates');
+  if(error){box.innerHTML=empty('Não foi possível carregar: '+error.message);return}
+  if(!data?.length){box.innerHTML=empty('Nenhum certificado elegível no momento.');return}
+  box.innerHTML='';
+  data.forEach(o=>{
+    const card=document.createElement('article');
+    card.className='certificate-card';
+    const released=!!o.certificate_id;
+    card.innerHTML=`<div><span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span><h3>${esc(o.holder_name||'')} · ${esc(o.detail||'')}</h3><small>${esc(o.holder_email||'')}${o.institution?' · '+esc(o.institution):''}${released?' · Código '+esc(o.certificate_code):''}</small></div><div class="certificate-editor-actions">${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}${released?'<button class="btn open-certificate-btn" type="button">Abrir</button>':''}</div>`;
+    const release=card.querySelector('.release-certificate-btn');
+    if(release)release.onclick=async()=>{
+      if(!confirm('Liberar este certificado para '+(o.holder_name||'o usuário')+'?'))return;
+      release.disabled=true;
+      try{
+        const {data:cert,error}=await supabase.rpc('editor_release_certificate',{p_type:o.certificate_type,p_reference_id:o.reference_id});
+        if(error)throw error;
+        notice('Certificado liberado com sucesso.','ok');
+        printCertificate(cert);
+        await loadEditorCertificates();
+      }catch(err){notice('Não foi possível liberar o certificado: '+(err?.message||err),'error')}
+      finally{release.disabled=false}
+    };
+    const open=card.querySelector('.open-certificate-btn');
+    if(open)open.onclick=async()=>{
+      try{
+        const {data:cert,error}=await supabase.from('certificate_issues').select('*').eq('id',o.certificate_id).single();
+        if(error)throw error;
+        printCertificate(cert);
+      }catch(err){notice('Não foi possível abrir o certificado: '+(err?.message||err),'error')}
+    };
+    box.appendChild(card);
+  });
+}
+
+async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[]);await loadEditorCertificates()}
 
 function renderEditorialCommunications(submissions,profiles,communications){
   const form=$('#editorial-communication-form'),recipient=$('#comm-recipient'),submission=$('#comm-submission'),type=$('#comm-type'),template=$('#comm-template'),subject=$('#comm-subject'),message=$('#comm-message'),history=$('#communication-history'),historyFilter=$('#comm-history-filter');
@@ -412,7 +453,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         <button class="btn release-resubmission-btn" type="button">Liberar reenvio</button>
         ${currentProfile.role==='editor_chief'?'<button class="btn delete-submission-btn" type="button">Excluir submissão</button>':''}
       </div>
-      ${currentProfile.role==='editor_chief'&&s.status==='accepted'?`<details class="publication-management" ${publication?'open':''}><summary><strong>${publication?'Publicação registrada':'Registrar publicação'}</strong></summary><form class="publication-form portal-form"><div class="form-row"><label>Volume<input name="volume" value="${esc(publication?.volume||'')}"></label><label>Número<input name="issue" value="${esc(publication?.issue||'')}"></label><label>Ano<input name="publication_year" type="number" min="2020" max="2100" value="${esc(publication?.publication_year||new Date().getFullYear())}"></label></div><div class="form-row"><label>Páginas<input name="pages" value="${esc(publication?.pages||'')}"></label><label>DOI<input name="doi" value="${esc(publication?.doi||'')}"></label></div><label>URL pública do artigo<input name="publication_url" type="url" value="${esc(publication?.publication_url||'')}"></label><label>Data da publicação<input name="published_at" type="date" value="${publication?.published_at?new Date(publication.published_at).toISOString().slice(0,10):new Date().toISOString().slice(0,10)}"></label><button class="btn primary" type="submit">${publication?'Atualizar dados de publicação':'Confirmar publicação'}</button><small>Ao registrar a publicação, o certificado de publicação ficará disponível para o autor.</small></form></details>`:''}
+      ${['editor_chief','managing_editor'].includes(currentProfile.role)&&s.status==='accepted'?`<details class="publication-management" ${publication?'open':''}><summary><strong>${publication?'Publicação registrada':'Registrar publicação'}</strong></summary><form class="publication-form portal-form"><div class="form-row"><label>Volume<input name="volume" value="${esc(publication?.volume||'')}"></label><label>Número<input name="issue" value="${esc(publication?.issue||'')}"></label><label>Ano<input name="publication_year" type="number" min="2020" max="2100" value="${esc(publication?.publication_year||new Date().getFullYear())}"></label></div><div class="form-row"><label>Páginas<input name="pages" value="${esc(publication?.pages||'')}"></label><label>DOI<input name="doi" value="${esc(publication?.doi||'')}"></label></div><label>URL pública do artigo<input name="publication_url" type="url" value="${esc(publication?.publication_url||'')}"></label><label>Data da publicação<input name="published_at" type="date" value="${publication?.published_at?new Date(publication.published_at).toISOString().slice(0,10):new Date().toISOString().slice(0,10)}"></label><button class="btn primary" type="submit">${publication?'Atualizar dados de publicação':'Confirmar publicação'}</button><small>Ao registrar a publicação, o certificado de publicação ficará disponível para o autor.</small></form></details>`:''}
       <div class="review-block reviewer-management">
         <strong>Gestão dos pareceristas</strong>
         <div class="item-actions">
