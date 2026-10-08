@@ -7,7 +7,7 @@ const supabase=createClient(
 
 const esc=(v='')=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const labels={
-  reviewer:'Reviewer Certificate',
+  reviewer:'Reviewer Board Member Certificate',
   author_acceptance:'Certificate of Acceptance',
   author_publication:'Certificate of Publication'
 };
