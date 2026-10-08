@@ -229,3 +229,14 @@
 .certificate-mail-status{display:block;margin-top:.25rem;color:#62777c}
 .certificate-editor-actions{display:flex;align-items:center;justify-content:flex-end;gap:.55rem;flex-wrap:wrap}
 @media(max-width:700px){.certificate-editor-actions{justify-content:flex-start;width:100%}.certificate-editor-actions .btn{flex:1}}
+
+.certificate-card-topline{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.certificate-email-badge{display:inline-flex;align-items:center;width:max-content;padding:.3rem .55rem;border-radius:999px;font-size:.65rem;font-weight:900;letter-spacing:.05em}
+.certificate-email-badge.sent{background:#e6f6eb;color:#23673d;border:1px solid #b9dec5}
+.certificate-email-badge.failed{background:#fde9e5;color:#8a3228;border:1px solid #efc4bc}
+.certificate-mail-status{margin-top:.45rem;padding:.5rem .65rem;border-radius:9px;font-size:.72rem;font-weight:700}
+.certificate-mail-status.sent{background:#edf8f1;color:#2d6240;border:1px solid #c6e3cf}
+.certificate-mail-status.failed{background:#fff0ed;color:#842f27;border:1px solid #efc7c0}
+.certificate-mail-status.pending{background:#fff8e6;color:#776020;border:1px solid #ead9a9}
+.certificate-email-sent{border-color:#bddfc7;background:linear-gradient(135deg,#fff,#f2fbf5)}
+.certificate-email-failed{border-color:#efc7c0;background:linear-gradient(135deg,#fff,#fff6f4)}
