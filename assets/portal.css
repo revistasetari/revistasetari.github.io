@@ -210,3 +210,18 @@
 .article-email-history-row span:nth-child(2){font-size:.74rem;color:#40585d}
 .article-email-history-row small{font-size:.66rem;color:#718487}
 @media(max-width:700px){.article-email-last-status{justify-items:start}.article-email-history-row{grid-template-columns:1fr}}
+
+
+/* SETARI certificates */
+.certificate-list{display:grid;gap:.9rem;margin-top:1rem}
+.certificate-card{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.1rem;border:1px solid #cfe0e2;border-radius:14px;background:linear-gradient(135deg,#fff,#f5faf9)}
+.certificate-card>div{display:grid;gap:.2rem;min-width:0}
+.certificate-card h3{margin:0;font-size:.9rem;color:#284d52;font-weight:700}
+.certificate-card small{color:#718487;font-size:.7rem}
+.certificate-kind{display:inline-flex;width:max-content;padding:.3rem .55rem;border-radius:999px;background:#e7f4f3;color:#075763;font-size:.67rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.certificate-action{white-space:nowrap}
+.publication-management{margin:.85rem 0;border:1px solid #d7e3e5;border-radius:12px;background:#f8fbfb}
+.publication-management>summary{cursor:pointer;padding:.85rem 1rem;color:#0b5962}
+.publication-form{padding:0 1rem 1rem}
+.publication-form small{color:#657a7e}
+@media(max-width:700px){.certificate-card{align-items:stretch;flex-direction:column}.certificate-action{width:100%}}
