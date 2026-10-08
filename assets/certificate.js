@@ -17,7 +17,7 @@ const validateLink=document.querySelector('#validate-link');
 if(validateLink&&code)validateLink.href='validar-certificado.html?codigo='+encodeURIComponent(code);
 
 function titleFor(type){
-  if(type==='reviewer')return 'Reviewer Certificate';
+  if(type==='reviewer')return 'Reviewer Board Member Certificate';
   if(type==='author_acceptance')return 'Certificate of Acceptance';
   return 'Certificate of Publication';
 }
@@ -27,7 +27,7 @@ function bodyFor(data){
   const holder=esc(m.holder_name||'');
 
   if(data.certificate_type==='reviewer'){
-    return `This is to certify that <strong>${holder}</strong>${m.institution?' ('+esc(m.institution)+')':''} served as an <strong>Ad Hoc Reviewer</strong> for <strong>SETARI — Science, Engineering, Technology, Applied Research &amp; Innovation</strong>, contributing to the scientific peer-review process in an activity completed on <strong>${esc(fmt(m.activity_date))}</strong>. In accordance with editorial confidentiality and the double-blind review process, this certificate does not disclose the title, authorship, submission code, or any other identifying information related to the manuscript reviewed.`;
+    return `This is to certify that <strong>${holder}</strong>${m.institution?' ('+esc(m.institution)+')':''} is a <strong>Reviewer Board Member</strong> of <strong>SETARI — Science, Engineering, Technology, Applied Research &amp; Innovation</strong>, and contributed to the scientific peer-review process through a review activity completed on <strong>${esc(fmt(m.activity_date))}</strong>. In accordance with editorial confidentiality and the double-blind review process, this certificate does not disclose the title, authorship, submission code, or any other identifying information related to the manuscript reviewed.`;
   }
 
   if(data.certificate_type==='author_acceptance'){
