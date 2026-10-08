@@ -355,6 +355,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       <div class="editor-action-bar">
         <select class="status-select">${(currentProfile.role==='managing_editor'?['submitted','under_screening','under_review','revision_requested','withdrawn']:['submitted','under_screening','under_review','revision_requested','accepted','rejected','withdrawn']).map(x=>`<option value="${x}" ${s.status===x?'selected':''}>${labels[x]}</option>`).join('')}</select>
         <button class="btn release-resubmission-btn" type="button">Liberar reenvio</button>
+        ${currentProfile.role==='editor_chief'?'<button class="btn delete-submission-btn" type="button">Excluir submissão</button>':''}
       </div>
       <div class="review-block reviewer-management">
         <strong>Gestão dos pareceristas</strong>
@@ -438,6 +439,22 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       if(error)return notice(error.message,'error');
       notice('Reenvio liberado. O autor pode fazer uma nova submissão.','ok');await loadEditor()
     };
+    const removeBtn=div.querySelector('.delete-submission-btn');
+    if(removeBtn)removeBtn.onclick=async()=>{
+      if(!confirm('Confirma a exclusão desta submissão?'))return;
+      removeBtn.disabled=true;
+      try{
+        const {error}=await supabase.rpc('editor_delete_submission',{p_submission_id:s.id});
+        if(error)throw error;
+        notice('Submissão excluída com sucesso.','ok');
+        await loadEditor();
+      }catch(err){
+        notice('Não foi possível excluir a submissão: '+(err?.message||err),'error');
+      }finally{
+        removeBtn.disabled=false;
+      }
+    };
+
     div.querySelector('.assign-btn').onclick=async()=>{
       const rid=div.querySelector('.reviewer-select').value;
       if(!rid)return notice('Selecione um parecerista.','error');
