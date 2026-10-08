@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificado · SETARI</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+@page{size:A4 landscape;margin:10mm}
+*{box-sizing:border-box}
+body{margin:0;background:#eef3f3;color:#14383c;font-family:Arial,Helvetica,sans-serif}
+.toolbar{display:flex;justify-content:center;gap:.7rem;padding:16px;position:sticky;top:0;background:#eef3f3;z-index:2}
+.toolbar button,.toolbar a{border:0;border-radius:9px;padding:.75rem 1rem;font-weight:800;text-decoration:none;cursor:pointer}
+.toolbar button{background:#07383f;color:#fff}.toolbar a{background:#fff;color:#07383f;border:1px solid #c7d7d9}
+.wrap{padding:12px}
+.sheet{width:min(1120px,calc(100vw - 32px));min-height:720px;margin:0 auto;background:#fff;border:7px double #0b5962;padding:64px 72px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;box-shadow:0 18px 55px rgba(7,56,63,.12)}
+.brand{font-size:38px;font-weight:900;letter-spacing:.13em;color:#07383f}.full{font-size:13px;letter-spacing:.09em;margin-top:5px;color:#537176}
+.title{font-family:Georgia,'Times New Roman',serif;font-size:36px;margin:26px 0;color:#07383f}
+.body{font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.75;max-width:980px}
+.sign{margin-top:38px;width:330px;border-top:1px solid #567;padding-top:9px;font-size:14px}.verify{position:absolute;bottom:28px;left:50px;right:50px;font-size:11px;color:#60777a;line-height:1.5}.code{font-weight:900;letter-spacing:.07em}
+.loading,.error{padding:3rem;text-align:center}.error{color:#8b2f28}
+@media(max-width:800px){.sheet{padding:35px 24px;min-height:620px}.body{font-size:18px}.title{font-size:28px}.verify{position:static;margin-top:30px}}
+@media print{
+ body{background:#fff}.toolbar{display:none}.wrap{padding:0}.sheet{width:100%;height:185mm;min-height:0;margin:0;box-shadow:none;border:7px double #0b5962;padding:16mm 20mm}.verify{bottom:8mm}
+}
+</style>
+<script type="module" src="assets/certificate.js?v=20261008-1"></script>
+</head><body>
+<div class="toolbar"><button id="print-btn" type="button">Imprimir / Salvar em PDF</button><a href="validar-certificado.html">Validar outro certificado</a></div>
+<div class="wrap"><div id="certificate"><div class="loading">Carregando certificado…</div></div></div>
+</body></html>
