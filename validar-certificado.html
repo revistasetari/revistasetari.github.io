@@ -1,1 +1,49 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Validar certificado · SETARI</title><meta name="description" content="Validação pública de certificados emitidos pela SETARI."><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/style.css"><style>main{min-height:72vh;padding:3rem 1rem}.verify-wrap{max-width:760px;margin:auto}.verify-card{background:#fff;border:1px solid #d7e3e5;border-radius:18px;padding:1.5rem;box-shadow:0 12px 32px rgba(7,56,63,.08)}.verify-form{display:flex;gap:.7rem;flex-wrap:wrap;margin:1rem 0}.verify-form input{flex:1;min-width:260px;padding:.8rem;border:1px solid #bfcfd1;border-radius:9px;font:inherit}.verify-form button{border:0;border-radius:9px;background:#07383f;color:#fff;padding:.8rem 1rem;font-weight:800;cursor:pointer}.result{margin-top:1rem;padding:1rem;border-radius:12px}.valid{background:#edf8f1;border:1px solid #b9dfc5;color:#225b35}.invalid{background:#fff0ed;border:1px solid #efc3ba;color:#7b3028}.meta{display:grid;gap:.45rem;margin-top:.8rem}.meta b{color:#173b40}</style><script type="module" src="assets/certificate-validation.js"></script></head><body><header class="site-header"><div class="wrap"><a href="index.html" class="brand">SETARI</a></div></header><main><div class="verify-wrap"><div class="verify-card"><span class="kicker">Autenticidade</span><h1>Validar certificado</h1><p>Digite o código impresso no certificado SETARI.</p><form id="verify-form" class="verify-form"><input id="code" autocomplete="off" placeholder="Ex.: SETARI-2026-XXXXXXXXXXXX" required><button type="submit">Validar</button></form><div id="result"></div></div></div></main><footer class="footer"><div class="wrap footer-bottom"><span>© 2026 SETARI.</span><span>Science, Engineering, Technology, Applied Research &amp; Innovation</span></div></footer></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificate Validation · SETARI</title>
+<meta name="description" content="Public validation of certificates issued by SETARI.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+body{background:#f2f6f7}
+main{min-height:74vh;padding:4rem 1rem}
+.verify-wrap{max-width:820px;margin:auto}
+.verify-card{background:#fff;border:1px solid #d8e3e5;border-radius:22px;padding:2rem;box-shadow:0 20px 60px rgba(7,55,111,.09);position:relative;overflow:hidden}
+.verify-card:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-120px;top:-130px;background:radial-gradient(circle,rgba(17,150,162,.13),rgba(17,150,162,0) 70%)}
+.logo{width:250px;max-width:72%;display:block;margin:0 0 1rem}
+.eyebrow{font-size:.72rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#1196a2}
+h1{margin:.35rem 0 .6rem;color:#07376f}
+.verify-form{display:flex;gap:.7rem;flex-wrap:wrap;margin:1.4rem 0}
+.verify-form input{flex:1;min-width:260px;padding:.9rem 1rem;border:1px solid #bfcfd1;border-radius:10px;font:inherit}
+.verify-form button{border:0;border-radius:10px;background:#07383f;color:#fff;padding:.9rem 1.1rem;font-weight:800;cursor:pointer}
+.result{margin-top:1rem;padding:1rem 1.1rem;border-radius:12px}
+.valid{background:#edf8f1;border:1px solid #b9dfc5;color:#225b35}
+.invalid{background:#fff0ed;border:1px solid #efc3ba;color:#7b3028}
+.meta{display:grid;gap:.5rem;margin-top:.9rem}.meta b{color:#173b40}
+.note{font-size:.85rem;color:#667b80;line-height:1.55}
+</style>
+<script type="module" src="assets/certificate-validation.js?v=20261008-en2"></script>
+</head>
+<body>
+<header class="site-header"><div class="wrap"><a href="index.html"><img src="assets/logo-setari.svg" alt="SETARI" style="width:210px;max-width:60vw"></a></div></header>
+<main>
+<div class="verify-wrap">
+<div class="verify-card">
+<img class="logo" src="assets/logo-setari.svg" alt="SETARI">
+<div class="eyebrow">Certificate Authentication</div>
+<h1>Validate a SETARI Certificate</h1>
+<p class="note">Enter the authentication code printed on the certificate or open this page using the certificate QR code.</p>
+<form id="verify-form" class="verify-form">
+<input id="code" autocomplete="off" placeholder="Example: SETARI-2026-XXXXXXXXXXXX" required>
+<button type="submit">Validate</button>
+</form>
+<div id="result"></div>
+</div>
+</div>
+</main>
+<footer class="footer"><div class="wrap footer-bottom"><span>© 2026 SETARI.</span><span>Science, Engineering, Technology, Applied Research &amp; Innovation</span></div></footer>
+</body>
+</html>
