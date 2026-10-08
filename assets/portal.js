@@ -108,16 +108,10 @@ function certificateBody(cert){
   return `Certificamos que o trabalho <strong>“${esc(m.title||'')}”</strong>, código <strong>${esc(m.submission_code||'')}</strong>, de autoria vinculada a <strong>${holder}</strong>, foi <strong>publicado</strong> na SETARI — Science, Engineering, Technology, Applied Research & Innovation${d?' em '+esc(d):''}${bib?' ('+bib+')':''}${m.doi?'. DOI: '+esc(m.doi):''}.`;
 }
 function printCertificate(cert){
-  const title=certificateTypeLabel(cert.certificate_type);
-  const body=certificateBody(cert);
-  const code=esc(cert.certificate_code||'');
-  const issued=new Intl.DateTimeFormat('pt-BR',{dateStyle:'long',timeZone:'America/Sao_Paulo'}).format(new Date(cert.issued_at||Date.now()));
-  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title} · SETARI</title><style>
-  @page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#14383c;background:#fff}.sheet{height:185mm;border:5px double #0b5962;padding:16mm 20mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}.brand{font-family:Arial,sans-serif;font-size:30px;font-weight:900;letter-spacing:.12em;color:#07383f}.full{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.08em;margin-top:4px;color:#537176}.title{font-size:32px;margin:18px 0 24px;color:#07383f}.body{font-size:20px;line-height:1.7;max-width:950px}.sign{margin-top:28px;width:320px;border-top:1px solid #567;padding-top:8px;font-family:Arial,sans-serif;font-size:13px}.verify{position:absolute;bottom:10mm;left:15mm;right:15mm;font-family:Arial,sans-serif;font-size:10px;color:#60777a}.code{font-weight:800;letter-spacing:.08em}@media print{button{display:none}}</style></head><body><div class="sheet"><div class="brand">SETARI</div><div class="full">SCIENCE, ENGINEERING, TECHNOLOGY, APPLIED RESEARCH &amp; INNOVATION</div><div class="title">${title}</div><div class="body">${body}</div><div class="sign">Dr. Leonardo de Carvalho Vidal<br><strong>Editor-Chefe</strong></div><div class="verify">Emitido em ${issued} · Código de autenticidade: <span class="code">${code}</span><br>Validação: revistasetari.github.io/validar-certificado.html</div></div><script>window.onload=()=>setTimeout(()=>window.print(),250)</script></body></html>`;
-  const w=window.open('','_blank','noopener,noreferrer');
-  if(!w)return notice('Permita pop-ups para gerar o certificado.','error');
-  w.document.open();w.document.write(html);w.document.close();
+  const code=encodeURIComponent(cert.certificate_code||'');
+  window.open('certificado.html?codigo='+code,'_blank','noopener,noreferrer');
 }
+
 async function loadCertificates(scope){
   const box=scope==='reviewer'?$('#reviewer-certificates'):$('#author-certificates');
   if(!box)return;
