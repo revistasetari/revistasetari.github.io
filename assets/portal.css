@@ -225,3 +225,7 @@
 .publication-form{padding:0 1rem 1rem}
 .publication-form small{color:#657a7e}
 @media(max-width:700px){.certificate-card{align-items:stretch;flex-direction:column}.certificate-action{width:100%}}
+
+.certificate-mail-status{display:block;margin-top:.25rem;color:#62777c}
+.certificate-editor-actions{display:flex;align-items:center;justify-content:flex-end;gap:.55rem;flex-wrap:wrap}
+@media(max-width:700px){.certificate-editor-actions{justify-content:flex-start;width:100%}.certificate-editor-actions .btn{flex:1}}
