@@ -893,6 +893,37 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
 }
 
 
+const appView=$('#app-view');
+if(appView){
+  let sentinel=$('#portal-sticky-sentinel');
+  if(!sentinel){
+    sentinel=document.createElement('div');
+    sentinel.id='portal-sticky-sentinel';
+    appView.insertBefore(sentinel,appView.querySelector('.portal-toolbar'));
+  }
+
+  const syncPortalHeaderMetrics=()=>{
+    const toolbar=appView.querySelector('.portal-toolbar');
+    const visiblePanel=[...appView.querySelectorAll('#author-panel,#reviewer-panel,#editor-panel')].find(p=>!p.hidden);
+    const subnav=visiblePanel?.querySelector('.portal-subnav');
+    if(toolbar)appView.style.setProperty('--portal-toolbar-height',Math.ceil(toolbar.getBoundingClientRect().height)+'px');
+    if(subnav)appView.style.setProperty('--portal-subnav-height',Math.ceil(subnav.getBoundingClientRect().height)+'px');
+  };
+
+  const updatePortalHeaderFixed=()=>{
+    syncPortalHeaderMetrics();
+    const trigger=sentinel.getBoundingClientRect().top<=8;
+    appView.classList.toggle('portal-header-fixed',trigger);
+  };
+
+  window.addEventListener('scroll',updatePortalHeaderFixed,{passive:true});
+  window.addEventListener('resize',updatePortalHeaderFixed,{passive:true});
+  document.querySelectorAll('.portal-subnav-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    requestAnimationFrame(()=>requestAnimationFrame(updatePortalHeaderFixed));
+  }));
+  setTimeout(updatePortalHeaderFixed,0);
+}
+
 const portalTopBtn=$('#portal-top-btn');
 if(portalTopBtn){
   portalTopBtn.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
