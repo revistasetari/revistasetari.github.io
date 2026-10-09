@@ -112,6 +112,77 @@ function printCertificate(cert){
   window.open('certificado.html?codigo='+code,'_blank','noopener,noreferrer');
 }
 
+let certificatePdfLibraries=null;
+async function getCertificatePdfLibraries(){
+  if(!certificatePdfLibraries){
+    certificatePdfLibraries=Promise.all([
+      import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm'),
+      import('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/+esm')
+    ]).then(([h,j])=>({html2canvas:h.default||h,jsPDF:j.jsPDF||j.default?.jsPDF||j.default}));
+  }
+  return certificatePdfLibraries;
+}
+
+async function buildCertificatePdfBase64(certificateCode){
+  const iframe=document.createElement('iframe');
+  iframe.setAttribute('aria-hidden','true');
+  iframe.style.cssText='position:fixed;left:-20000px;top:0;width:1200px;height:860px;border:0;pointer-events:none;z-index:-9999;background:#fff;';
+  iframe.src='certificado.html?codigo='+encodeURIComponent(certificateCode);
+  document.body.appendChild(iframe);
+
+  try{
+    await new Promise((resolve,reject)=>{
+      const timeout=setTimeout(()=>reject(new Error('Tempo excedido ao preparar o certificado.')),15000);
+      iframe.onload=()=>{clearTimeout(timeout);resolve()};
+      iframe.onerror=()=>{clearTimeout(timeout);reject(new Error('Não foi possível carregar o certificado para o PDF.'))};
+    });
+
+    let sheet=null;
+    for(let i=0;i<80;i++){
+      const doc=iframe.contentDocument;
+      sheet=doc?.querySelector('.sheet');
+      const qr=doc?.querySelector('#qr');
+      const ready=sheet&&!doc?.querySelector('.loading')&&(!qr||String(qr.getAttribute('src')||'').startsWith('data:image'));
+      if(ready)break;
+      await new Promise(r=>setTimeout(r,100));
+    }
+    if(!sheet)throw new Error('O certificado não terminou de carregar.');
+
+    const {html2canvas,jsPDF}=await getCertificatePdfLibraries();
+    if(!html2canvas||!jsPDF)throw new Error('Biblioteca de geração do PDF indisponível.');
+
+    const canvas=await html2canvas(sheet,{
+      scale:2,
+      backgroundColor:'#ffffff',
+      useCORS:true,
+      allowTaint:false,
+      logging:false
+    });
+
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const ratio=canvas.width/canvas.height;
+    let w=pageW,h=w/ratio;
+    if(h>pageH){h=pageH;w=h*ratio}
+    const x=(pageW-w)/2,y=(pageH-h)/2;
+    const img=canvas.toDataURL('image/jpeg',0.96);
+    pdf.addImage(img,'JPEG',x,y,w,h,undefined,'FAST');
+    pdf.setProperties({
+      title:'SETARI Certificate '+certificateCode,
+      subject:'Official SETARI Certificate',
+      author:'SETARI Editorial Office',
+      creator:'SETARI'
+    });
+    const uri=pdf.output('datauristring');
+    const base64=String(uri).split(',')[1]||'';
+    if(!base64)throw new Error('Não foi possível finalizar o PDF.');
+    return base64;
+  }finally{
+    iframe.remove();
+  }
+}
+
 async function loadCertificates(scope){
   const box=scope==='reviewer'?$('#reviewer-certificates'):$('#author-certificates');
   if(!box)return;
@@ -217,7 +288,8 @@ async function loadEditorCertificates(){
       const original=emailBtn.textContent;
       emailBtn.textContent='Enviando…';
       try{
-        const sent=await supabase.functions.invoke('send-certificate-email',{body:{certificate_id:o.certificate_id}});
+        const pdfBase64=await buildCertificatePdfBase64(o.certificate_code);
+        const sent=await supabase.functions.invoke('send-certificate-email',{body:{certificate_id:o.certificate_id,pdf_base64:pdfBase64}});
         if(sent.error)throw new Error(sent.error.message||'Falha ao chamar o serviço de envio.');
         if(sent.data?.error)throw new Error(sent.data.error+(sent.data?.detail?' · '+sent.data.detail:''));
         notice('Certificado enviado por e-mail com cópia para a SETARI.','ok');
