@@ -436,3 +436,7 @@
 
 .delete-certificate-btn{background:#fff;color:#8b3028;border:1px solid #e2b8b2}
 .delete-certificate-btn:hover{background:#fff1ee;border-color:#cf8f86}
+
+.certificate-signer-control{display:grid;gap:.32rem;margin-top:.6rem;font-size:.72rem;font-weight:900;color:#315d64;max-width:310px}
+.certificate-signer-control select{width:100%;border:1px solid #cbdada;border-radius:9px;padding:.58rem .68rem;background:#fff;color:#173b40;font:inherit}
+.certificate-signer-control select:focus{outline:2px solid rgba(12,105,116,.18);border-color:#0c6974}
