@@ -84,9 +84,9 @@ async function load(){
 
       <div class="body">${bodyFor(data)}</div>
 
-      <div class="signatures \${(data.metadata?.signer_mode||'both')==='both'?'two-signers':'one-signer'}">
-        \${(data.metadata?.signer_mode||'both')!=='managing_editor'?'<div class="signature"><b>Dr. Leonardo de Carvalho Vidal</b>Editor-in-Chief</div>':''}
-        \${(data.metadata?.signer_mode||'both')!=='editor_chief'?'<div class="signature"><b>Tayline Hândrea Pereira do Amaral</b>Executive Editor</div>':''}
+      <div class="signatures ${(data.metadata?.signer_mode||'both')==='both'?'two-signers':'one-signer'}">
+        ${(data.metadata?.signer_mode||'both')!=='managing_editor'?'<div class="signature"><b>Dr. Leonardo de Carvalho Vidal</b>Editor-in-Chief</div>':''}
+        ${(data.metadata?.signer_mode||'both')!=='editor_chief'?'<div class="signature"><b>Tayline Hândrea Pereira do Amaral</b>Executive Editor</div>':''}
       </div>
 
       <div class="footer-meta">
