@@ -306,7 +306,7 @@ async function loadEditorCertificates(){
   });
 }
 
-async function loadEditor(){const reviewQuery=currentProfile.role==='managing_editor'?supabase.rpc('managing_editor_reviews'):supabase.from('reviews').select('*');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[]);await loadEditorCertificates()}
+async function loadEditor(){const reviewQuery=supabase.rpc('editorial_staff_reviews');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[]);await loadEditorCertificates()}
 
 function renderEditorialCommunications(submissions,profiles,communications){
   const form=$('#editorial-communication-form'),recipient=$('#comm-recipient'),submission=$('#comm-submission'),type=$('#comm-type'),template=$('#comm-template'),subject=$('#comm-subject'),message=$('#comm-message'),history=$('#communication-history'),historyFilter=$('#comm-history-filter');
@@ -423,16 +423,23 @@ function renderEditorSummary(subs,assign,reviews){
   const revisions=subs.filter(s=>s.status==='revision_requested').length;
   $('#editor-summary').innerHTML=`<div class="summary-card action-card"><b>${triage}</b><span>Triagem / ação inicial</span></div><div class="summary-card"><b>${awaiting}</b><span>Aguardando pareceres</span></div><div class="summary-card action-card"><b>${decisions}</b><span>Decisão pendente</span></div><div class="summary-card"><b>${revisions}</b><span>Aguardando autor</span></div>`;
 }
+function reviewRecommendationLabel(value){
+  return ({accept:'Aceitar',minor_revision:'Revisão menor',major_revision:'Revisão maior',reject:'Rejeitar'})[value]||value||'—';
+}
+function reviewScoresHtml(r){
+  const items=[['Originalidade',r.score_originality],['Relevância',r.score_relevance],['Metodologia',r.score_methodology],['Resultados',r.score_results],['Clareza',r.score_clarity],['Referências',r.score_references],['Aplicabilidade',r.score_applicability],['Nota geral',r.score_overall]].filter(x=>x[1]!=null);
+  if(!items.length)return '';
+  const tech=items.filter((_,i)=>i<7).map(x=>Number(x[1])).filter(Number.isFinite);
+  const avg=tech.length?(tech.reduce((a,b)=>a+b,0)/tech.length).toFixed(2):null;
+  return '<div class="review-score-grid">'+items.map(x=>'<div><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'/5</b></div>').join('')+(avg?'<div class="review-score-average"><span>Média técnica</span><b>'+avg+'/5</b></div>':'')+'</div>';
+}
 function renderReviewerWorkload(subs,assign,reviews,profiles){
   const box=$('#editor-reviewer-workload'),filter=$('#reviewer-workload-filter');
   if(!box||!filter)return;
   const reviewers=profiles.filter(p=>p.role==='reviewer'&&p.active);
   const subMap=Object.fromEntries(subs.map(s=>[s.id,s]));
   const reviewByAssign=Object.fromEntries(reviews.map(r=>[r.assignment_id,r]));
-  const groups=reviewers.map(r=>({
-    reviewer:r,
-    assignments:assign.filter(a=>a.reviewer_id===r.id).map(a=>({assignment:a,submission:subMap[a.submission_id],review:reviewByAssign[a.id]})).filter(x=>x.submission)
-  }));
+  const groups=reviewers.map(r=>({reviewer:r,assignments:assign.filter(a=>a.reviewer_id===r.id).map(a=>({assignment:a,submission:subMap[a.submission_id],review:reviewByAssign[a.id]})).filter(x=>x.submission)}));
   filter.innerHTML='<option value="">Todos os pareceristas</option>'+reviewers.map(r=>'<option value="'+r.id+'">'+esc(r.full_name||r.email)+'</option>').join('');
   const render=()=>{
     const chosen=filter.value;
@@ -444,7 +451,17 @@ function renderReviewerWorkload(subs,assign,reviews,profiles){
       const done=g.assignments.filter(x=>x.assignment.completed_at).length;
       const card=document.createElement('article');
       card.className='item-card reviewer-workload-card';
-      card.innerHTML=`<div class="reviewer-workload-head"><div><h3>${esc(g.reviewer.full_name||'Parecerista')}</h3><div class="item-meta"><span>${esc(g.reviewer.email||'')}</span><span>${esc(g.reviewer.institution||'')}</span></div></div><div class="reviewer-workload-summary"><span><b>${g.assignments.length}</b> atribuídos</span><span><b>${pending}</b> pendentes</span><span><b>${done}</b> concluídos</span></div></div><div class="reviewer-assignment-list">${g.assignments.length?g.assignments.map(x=>{const a=x.assignment,s=x.submission,r=x.review;return `<div class="reviewer-assignment-row"><div><strong>${esc(s.code||'')} · ${esc(s.title)}</strong><small>Status do artigo: ${esc(labels[s.status]||s.status)}</small></div><div class="reviewer-assignment-state"><span class="${a.completed_at?'done':'pending'}">${a.completed_at?'Parecer recebido':'Pendente'}</span><small>Prazo: ${a.due_at?fmt(a.due_at):'não definido'}</small>${r?.recommendation?`<small>Recomendação: ${esc(r.recommendation)}</small>`:''}</div></div>`}).join(''):'<div class="empty-msg">Nenhum artigo atribuído.</div>'}</div>`;
+      const assignmentsHtml=g.assignments.length?g.assignments.map(x=>{
+        const a=x.assignment,s=x.submission,r=x.review;
+        const complete=!!a.completed_at;
+        const reviewDetails=complete&&r?`<details class="reviewer-review-details"><summary>Ver dados completos do parecer</summary><div class="reviewer-review-panel"><div class="reviewer-review-meta"><span><b>Enviado:</b> ${r.submitted_at?fmt(r.submitted_at):'—'}</span><span><b>Recomendação:</b> ${esc(reviewRecommendationLabel(r.recommendation))}</span><span><b>Autor já recebeu:</b> ${r.released_to_author?'Sim':'Não'}</span></div>${reviewScoresHtml(r)}<div class="review-text-block"><strong>Comentários aos autores</strong><p>${esc(r.comments_to_author||'Sem comentário textual.')}</p></div><div class="review-text-block confidential"><strong>Comentários confidenciais à equipe editorial</strong><p>${esc(r.confidential_comments_to_editor||'Sem comentário confidencial.')}</p></div><div class="reviewer-review-actions">${r.review_file_path?'<button class="btn reviewer-review-file" type="button" data-path="'+esc(r.review_file_path)+'">Abrir arquivo do parecer</button>':''}${!r.released_to_author?'<button class="btn primary reviewer-release-review" type="button" data-review-id="'+esc(r.id)+'">Liberar parecer ao autor</button>':'<span class="review-released-badge">✓ Liberado ao autor</span>'}</div></div></details>`:'';
+        return `<div class="reviewer-assignment-row" data-submission-id="${esc(s.id)}"><div class="reviewer-assignment-main"><strong>${esc(s.code||'')} · ${esc(s.title)}</strong><small>Status do artigo: ${esc(labels[s.status]||s.status)}</small><div class="reviewer-row-actions"><button class="btn reviewer-open-submission" type="button" data-submission-id="${esc(s.id)}">Abrir na aba Submissões</button>${!complete?'<button class="btn reviewer-send-reminder" type="button" data-reviewer-id="'+esc(g.reviewer.id)+'" data-submission-id="'+esc(s.id)+'">Enviar lembrete</button>':''}</div>${reviewDetails}</div><div class="reviewer-assignment-state"><span class="${complete?'done':'pending'}">${complete?'Parecer recebido':'Pendente'}</span><small>Prazo: ${a.due_at?fmt(a.due_at):'não definido'}</small>${r?.recommendation?`<small>Recomendação: ${esc(reviewRecommendationLabel(r.recommendation))}</small>`:''}</div></div>`;
+      }).join(''):'<div class="empty-msg">Nenhum artigo atribuído.</div>';
+      card.innerHTML=`<div class="reviewer-workload-head"><div><h3>${esc(g.reviewer.full_name||'Parecerista')}</h3><div class="item-meta"><span>${esc(g.reviewer.email||'')}</span><span>${esc(g.reviewer.institution||'')}</span></div></div><div class="reviewer-workload-summary"><span><b>${g.assignments.length}</b> atribuídos</span><span><b>${pending}</b> pendentes</span><span><b>${done}</b> concluídos</span></div></div><div class="reviewer-assignment-list">${assignmentsHtml}</div>`;
+      card.querySelectorAll('.reviewer-open-submission').forEach(btn=>btn.onclick=()=>{const sid=btn.dataset.submissionId;if(!showPortalTab('editor','submissions'))return;setTimeout(()=>{const target=document.querySelector('#editor-submissions .editorial-card[data-submission-id="'+sid+'"]');if(target){target.hidden=false;target.classList.remove('is-collapsed');target.scrollIntoView({behavior:'smooth',block:'start'});}},80);});
+      card.querySelectorAll('.reviewer-review-file').forEach(btn=>btn.onclick=async()=>{try{location.href=await signed('reviews',btn.dataset.path)}catch(e){notice('Não foi possível abrir o arquivo do parecer: '+e.message,'error')}});
+      card.querySelectorAll('.reviewer-release-review').forEach(btn=>btn.onclick=async()=>{if(!confirm('Liberar os comentários deste parecer para o autor? Os comentários confidenciais à equipe editorial NÃO serão exibidos.'))return;btn.disabled=true;try{const {error}=await supabase.rpc('editor_set_review_release',{p_review_id:btn.dataset.reviewId});if(error)throw error;notice('Parecer liberado ao autor.','ok');await loadEditor();}catch(e){notice('Não foi possível liberar o parecer: '+(e?.message||e),'error')}finally{btn.disabled=false}});
+      card.querySelectorAll('.reviewer-send-reminder').forEach(btn=>btn.onclick=async()=>{const sid=btn.dataset.submissionId,rid=btn.dataset.reviewerId;const s=subMap[sid];if(!confirm('Enviar lembrete de parecer pendente para '+(g.reviewer.full_name||g.reviewer.email)+'?'))return;btn.disabled=true;try{const subject='SETARI · Lembrete de parecer pendente · '+(s?.code||'Submissão');const message='Prezado(a) Parecerista,\n\nEste é um lembrete sobre o parecer pendente referente ao manuscrito '+(s?.code||'')+' — '+(s?.title||'')+'. Pedimos, por gentileza, que verifique a Área Restrita da SETARI e conclua a avaliação quando possível.\n\nCaso necessite de prazo adicional, responda a este e-mail.\n\nSETARI Editorial Office';const created=await supabase.rpc('create_editorial_communication',{p_recipient_id:rid,p_submission_id:sid,p_subject:subject,p_message:message,p_communication_type:'review_followup'});if(created.error)throw created.error;const sent=await supabase.functions.invoke('send-editorial-communication',{body:{communication_id:created.data}});if(sent.error)throw sent.error;if(sent.data?.error)throw new Error(sent.data.error);notice('Lembrete enviado ao parecerista.','ok');}catch(e){notice('Não foi possível enviar o lembrete: '+(e?.message||e),'error')}finally{btn.disabled=false}});
       box.appendChild(card);
     });
   };
@@ -857,6 +874,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         btn.disabled=false;btn.textContent='Enviar e-mail deste artigo';
       }
     };
+    div.dataset.submissionId=s.id;
     div.dataset.search=[s.code||'',s.title||'',author?.full_name||'',author?.email||''].join(' ').toLowerCase();
     div.dataset.status=s.status||'';
     div.dataset.priority=String(flow.priority||'');
