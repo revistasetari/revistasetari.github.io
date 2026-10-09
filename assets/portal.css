@@ -329,3 +329,58 @@
     top:142px !important;
   }
 }
+
+/* Fixação definitiva do cabeçalho operacional da Área Restrita */
+#app-view{
+  --portal-toolbar-height:112px;
+  --portal-subnav-height:62px;
+}
+#portal-sticky-sentinel{height:1px;width:100%}
+
+#app-view.portal-header-fixed{
+  padding-top:calc(var(--portal-toolbar-height) + var(--portal-subnav-height) + 22px);
+}
+
+#app-view.portal-header-fixed .portal-toolbar{
+  position:fixed !important;
+  top:8px !important;
+  left:50% !important;
+  width:min(1180px,92vw) !important;
+  transform:translateX(-50%) !important;
+  z-index:1000 !important;
+  margin:0 !important;
+  box-shadow:0 10px 28px rgba(7,56,63,.18) !important;
+}
+
+#app-view.portal-header-fixed .portal-subnav{
+  position:fixed !important;
+  top:calc(8px + var(--portal-toolbar-height) + 8px) !important;
+  left:50% !important;
+  width:min(1180px,92vw) !important;
+  transform:translateX(-50%) !important;
+  z-index:999 !important;
+  margin:0 !important;
+  background:rgba(243,247,247,.985) !important;
+  box-shadow:0 8px 22px rgba(7,56,63,.12) !important;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+#app-view:not(.portal-header-fixed) .portal-toolbar,
+#app-view:not(.portal-header-fixed) .portal-subnav{
+  position:relative !important;
+  top:auto !important;
+  left:auto !important;
+  width:auto !important;
+  transform:none !important;
+}
+
+@media(max-width:640px){
+  #app-view.portal-header-fixed{
+    padding-top:calc(var(--portal-toolbar-height) + var(--portal-subnav-height) + 16px);
+  }
+  #app-view.portal-header-fixed .portal-toolbar,
+  #app-view.portal-header-fixed .portal-subnav{
+    width:96vw !important;
+  }
+}
