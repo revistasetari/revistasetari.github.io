@@ -97,9 +97,9 @@ async function load(){
 
       <div class="footer-meta">
         <div class="verify-copy">
-          Issued on ${esc(fmt(data.issued_at))}<br>
-          Authentication code: <span class="code">${esc(data.certificate_code)}</span><br>
-          Verify this certificate at <strong>revistasetari.github.io/validar-certificado.html</strong>
+          <strong>This certificate is electronically validated.</strong><br>
+          Issued on ${esc(fmt(data.issued_at))} · Authentication code: <span class="code">${esc(data.certificate_code)}</span><br>
+          Authenticity is verified through the QR Code or at <strong>revistasetari.github.io/validar-certificado.html</strong>
         </div>
         <div class="qr-wrap">
           <img id="qr" alt="Certificate validation QR code">
