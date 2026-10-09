@@ -433,3 +433,6 @@
   .revision-decision-box{grid-template-columns:1fr}
   .revision-decision-box>small{grid-column:auto}
 }
+
+.delete-certificate-btn{background:#fff;color:#8b3028;border:1px solid #e2b8b2}
+.delete-certificate-btn:hover{background:#fff1ee;border-color:#cf8f86}
