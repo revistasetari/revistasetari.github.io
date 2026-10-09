@@ -254,7 +254,7 @@ async function loadEditorCertificates(){
     </div>
     <div class="certificate-editor-actions">
       ${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}
-      ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button>':''}
+      ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button><button class="btn delete-certificate-btn" type="button">Apagar certificado</button>':''}
     </div>`;
 
     const release=card.querySelector('.release-certificate-btn');
@@ -302,6 +302,27 @@ async function loadEditorCertificates(){
       }
     };
 
+    const deleteBtn=card.querySelector('.delete-certificate-btn');
+    if(deleteBtn)deleteBtn.onclick=async()=>{
+      const holder=o.holder_name||'este usuário';
+      if(!confirm('Apagar este certificado de '+holder+'?\n\nEle desaparecerá da Área Restrita e o QR Code/código de autenticação deixará de ser válido. Esta ação não poderá ser desfeita pela interface.'))return;
+      deleteBtn.disabled=true;
+      const original=deleteBtn.textContent;
+      deleteBtn.textContent='Apagando…';
+      try{
+        const {error}=await supabase.rpc('editor_delete_certificate',{
+          p_certificate_id:o.certificate_id,
+          p_reason:'Exclusão manual pela equipe editorial'
+        });
+        if(error)throw error;
+        notice('Certificado apagado e invalidado. Ele não aparecerá mais na Área Restrita.','ok');
+        await loadEditorCertificates();
+      }catch(err){
+        notice('Não foi possível apagar o certificado: '+(err?.message||err),'error');
+        deleteBtn.disabled=false;
+        deleteBtn.textContent=original;
+      }
+    };
     box.appendChild(card);
   });
 }
