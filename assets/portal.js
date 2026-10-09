@@ -636,7 +636,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       <div class="file-separation editor-files"><div class="file-card manuscript-file"><div class="file-visual-head"><span class="file-icon">📄</span><div><span class="file-kind">ARTIGO / MANUSCRITO</span><strong>Manuscrito anonimizado</strong></div></div><span class="file-access-badge reviewer-access">✓ ARQUIVO ENVIADO AOS PARECERISTAS</span><small>Conteúdo científico usado na avaliação duplo-cega.</small>${reviewerInline}<button class="btn manuscript-btn">Abrir ARTIGO / MANUSCRITO</button></div><div class="file-card cover-file"><div class="file-visual-head"><span class="file-icon">👤</span><div><span class="file-kind">FOLHA DE ROSTO</span><strong>Identificação dos autores</strong></div></div><span class="file-access-badge editorial-access">🔒 NÃO É MOSTRADA AOS PARECERISTAS</span><small>Contém nomes, afiliações, e-mails, ORCID e autor correspondente.</small>${s.cover_sheet_path?'<button class="btn cover-btn">Abrir FOLHA DE ROSTO</button>':'<span class="file-missing">Não enviada — submissão anterior</span>'}</div></div>
       <div class="editor-action-bar">
         <select class="status-select">${(currentProfile.role==='managing_editor'?['submitted','under_screening','under_review','revision_requested','withdrawn']:['submitted','under_screening','under_review','revision_requested','accepted','rejected','withdrawn']).map(x=>`<option value="${x}" ${s.status===x?'selected':''}>${labels[x]}</option>`).join('')}</select>
-        <button class="btn release-resubmission-btn" type="button">Liberar reenvio</button>
+        <button class="btn release-resubmission-btn" type="button">Solicitar / liberar revisão</button>
         ${currentProfile.role==='editor_chief'?'<button class="btn delete-submission-btn" type="button">Excluir submissão</button>':''}
       </div>
       ${['editor_chief','managing_editor'].includes(currentProfile.role)&&s.status==='accepted'?`<details class="publication-management" ${publication?'open':''}><summary><strong>${publication?'Publicação registrada':'Registrar publicação'}</strong></summary><form class="publication-form portal-form"><div class="form-row"><label>Volume<input name="volume" value="${esc(publication?.volume||'')}"></label><label>Número<input name="issue" value="${esc(publication?.issue||'')}"></label><label>Ano<input name="publication_year" type="number" min="2020" max="2100" value="${esc(publication?.publication_year||new Date().getFullYear())}"></label></div><div class="form-row"><label>Páginas<input name="pages" value="${esc(publication?.pages||'')}"></label><label>DOI<input name="doi" value="${esc(publication?.doi||'')}"></label></div><label>URL pública do artigo<input name="publication_url" type="url" value="${esc(publication?.publication_url||'')}"></label><label>Data da publicação<input name="published_at" type="date" value="${publication?.published_at?new Date(publication.published_at).toISOString().slice(0,10):new Date().toISOString().slice(0,10)}"></label><button class="btn primary" type="submit">${publication?'Atualizar dados de publicação':'Confirmar publicação'}</button><small>Ao registrar a publicação, o certificado de publicação ficará disponível para o autor.</small></form></details>`:''}
@@ -715,12 +715,12 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       notice('Status atualizado.','ok');await loadEditor()
     };
     div.querySelector('.release-resubmission-btn').onclick=async()=>{
-      if(!confirm('Liberar o autor para fazer um novo envio? A submissão atual será marcada como retirada e permanecerá registrada no histórico.'))return;
+      if(!confirm('Liberar o autor para enviar uma versão revisada deste mesmo artigo? O histórico será preservado.'))return;
       let error=null;
-      if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:'withdrawn'});error=r.error}
-      else{const r=await supabase.from('submissions').update({status:'withdrawn',updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}
+      if(currentProfile.role==='managing_editor'){const r=await supabase.rpc('managing_editor_set_status',{p_submission:s.id,p_status:'revision_requested'});error=r.error}
+      else{const r=await supabase.from('submissions').update({status:'revision_requested',updated_at:new Date().toISOString()}).eq('id',s.id);error=r.error}
       if(error)return notice(error.message,'error');
-      notice('Reenvio liberado. O autor pode fazer uma nova submissão.','ok');await loadEditor()
+      notice('Revisão liberada. O autor poderá enviar a nova versão neste mesmo artigo.','ok');await loadEditor()
     };
     const removeBtn=div.querySelector('.delete-submission-btn');
     if(removeBtn)removeBtn.onclick=async()=>{
