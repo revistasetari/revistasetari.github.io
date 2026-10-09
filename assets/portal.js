@@ -512,6 +512,49 @@ function renderUsers(profiles){
     box.appendChild(section);
   });
 }
+
+function applyEditorSubmissionFilters(){
+  const box=$('#editor-submissions');
+  if(!box)return;
+  const search=String($('#submission-search')?.value||'').trim().toLowerCase();
+  const status=$('#submission-status-filter')?.value||'';
+  const priority=$('#submission-priority-filter')?.value||'';
+  let visible=0,total=0;
+  box.querySelectorAll('.editorial-card').forEach(card=>{
+    total++;
+    const okSearch=!search||String(card.dataset.search||'').includes(search);
+    const okStatus=!status||card.dataset.status===status;
+    const okPriority=!priority||card.dataset.priority===priority;
+    const show=okSearch&&okStatus&&okPriority;
+    card.hidden=!show;
+    if(show)visible++;
+  });
+  const counter=$('#submission-visible-count');
+  if(counter)counter.textContent=visible===total?total+' submissão(ões)':'Mostrando '+visible+' de '+total+' submissão(ões)';
+}
+function bindEditorSubmissionNavigation(){
+  const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
+  if(search)search.oninput=applyEditorSubmissionFilters;
+  if(status)status.onchange=applyEditorSubmissionFilters;
+  if(priority)priority.onchange=applyEditorSubmissionFilters;
+  const collapse=$('#collapse-submissions-btn'),expand=$('#expand-submissions-btn');
+  if(collapse)collapse.onclick=()=>{
+    document.querySelectorAll('#editor-submissions .editorial-card').forEach(card=>{
+      card.classList.add('is-collapsed');
+      const b=card.querySelector('.editor-card-toggle');
+      if(b){b.setAttribute('aria-expanded','false');const t=b.querySelector('.toggle-state');if(t)t.textContent='Abrir detalhes'}
+    });
+  };
+  if(expand)expand.onclick=()=>{
+    document.querySelectorAll('#editor-submissions .editorial-card:not([hidden])').forEach(card=>{
+      card.classList.remove('is-collapsed');
+      const b=card.querySelector('.editor-card-toggle');
+      if(b){b.setAttribute('aria-expanded','true');const t=b.querySelector('.toggle-state');if(t)t.textContent='Recolher detalhes'}
+    });
+  };
+  applyEditorSubmissionFilters();
+}
+
 async function renderEditorSubmissions(subs,assign,reviews,messages,communications=[],publications=[]){
   const box=$('#editor-submissions');
   if(!subs.length){box.innerHTML=empty('Nenhuma submissão recebida.');return}
@@ -814,9 +857,48 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         btn.disabled=false;btn.textContent='Enviar e-mail deste artigo';
       }
     };
+    div.dataset.search=[s.code||'',s.title||'',author?.full_name||'',author?.email||''].join(' ').toLowerCase();
+    div.dataset.status=s.status||'';
+    div.dataset.priority=String(flow.priority||'');
+
+    const firstDetail=[...div.children].find(el=>el.matches('.submission-details'));
+    if(firstDetail){
+      const toggle=document.createElement('button');
+      toggle.type='button';
+      toggle.className='editor-card-toggle';
+      toggle.setAttribute('aria-expanded','false');
+      toggle.innerHTML='<span>Gestão completa deste artigo</span><span class="toggle-state">Abrir detalhes</span>';
+      const wrapper=document.createElement('div');
+      wrapper.className='editor-card-collapsible';
+      let node=firstDetail;
+      while(node){
+        const next=node.nextElementSibling;
+        wrapper.appendChild(node);
+        node=next;
+      }
+      div.appendChild(toggle);
+      div.appendChild(wrapper);
+      div.classList.add('is-collapsed');
+      toggle.onclick=()=>{
+        const collapsed=div.classList.toggle('is-collapsed');
+        toggle.setAttribute('aria-expanded',collapsed?'false':'true');
+        const state=toggle.querySelector('.toggle-state');
+        if(state)state.textContent=collapsed?'Abrir detalhes':'Recolher detalhes';
+      };
+    }
+
     box.appendChild(div);
   }
+  bindEditorSubmissionNavigation();
 }
 
+
+const portalTopBtn=$('#portal-top-btn');
+if(portalTopBtn){
+  portalTopBtn.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+  const updateTopButton=()=>portalTopBtn.classList.toggle('visible',window.scrollY>650);
+  window.addEventListener('scroll',updateTopButton,{passive:true});
+  updateTopButton();
+}
 
 refreshSession();
