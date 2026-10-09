@@ -243,6 +243,7 @@ async function loadEditorCertificates(){
     if(mailSent)card.classList.add('certificate-email-sent');
     if(mailFailed)card.classList.add('certificate-email-failed');
 
+    const signerMode=o.signer_mode||'both';
     card.innerHTML=`<div>
       <div class="certificate-card-topline">
         <span class="certificate-kind">${esc(certificateTypeLabel(o.certificate_type))}</span>
@@ -250,6 +251,13 @@ async function loadEditorCertificates(){
       </div>
       <h3>${esc(o.holder_name||'')} · ${esc(o.detail||'')}</h3>
       <small>${esc(o.holder_email||'')}${o.institution?' · '+esc(o.institution):''}${released?' · Código '+esc(o.certificate_code):''}</small>
+      <label class="certificate-signer-control">Assinatura institucional
+        <select class="certificate-signer-select">
+          <option value="both" ${signerMode==='both'?'selected':''}>Ambos os editores</option>
+          <option value="editor_chief" ${signerMode==='editor_chief'?'selected':''}>Somente Editor-Chefe</option>
+          <option value="managing_editor" ${signerMode==='managing_editor'?'selected':''}>Somente Editora Executiva</option>
+        </select>
+      </label>
       ${released?'<div class="certificate-mail-status '+(mailSent?'sent':mailFailed?'failed':'pending')+'">'+mailText+'</div>':''}
     </div>
     <div class="certificate-editor-actions">
@@ -262,13 +270,28 @@ async function loadEditorCertificates(){
       if(!confirm('Liberar este certificado para '+(o.holder_name||'o usuário')+'?'))return;
       release.disabled=true;
       try{
-        const {data:cert,error}=await supabase.rpc('editor_release_certificate',{p_type:o.certificate_type,p_reference_id:o.reference_id});
+        const signerMode=card.querySelector('.certificate-signer-select')?.value||'both';
+        const {data:cert,error}=await supabase.rpc('editor_release_certificate_configured',{p_type:o.certificate_type,p_reference_id:o.reference_id,p_signer_mode:signerMode});
         if(error)throw error;
         notice('Certificado liberado com sucesso.','ok');
         printCertificate(cert);
         await loadEditorCertificates();
       }catch(err){notice('Não foi possível liberar o certificado: '+(err?.message||err),'error')}
       finally{release.disabled=false}
+    };
+
+    const signerSelect=card.querySelector('.certificate-signer-select');
+    if(signerSelect&&released)signerSelect.onchange=async()=>{
+      signerSelect.disabled=true;
+      try{
+        const {error}=await supabase.rpc('editor_set_certificate_signers',{p_certificate_id:o.certificate_id,p_signer_mode:signerSelect.value});
+        if(error)throw error;
+        notice('Assinatura institucional do certificado atualizada.','ok');
+      }catch(err){
+        notice('Não foi possível alterar os assinantes: '+(err?.message||err),'error');
+      }finally{
+        signerSelect.disabled=false;
+      }
     };
 
     const open=card.querySelector('.open-certificate-btn');
