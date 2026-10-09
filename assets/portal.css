@@ -280,3 +280,52 @@
  .submission-search,.submission-view-actions{grid-column:auto}
  .portal-top-btn{right:12px;bottom:12px}
 }
+
+/* Área Restrita: cabeçalho operacional sempre visível */
+#app-view .portal-toolbar{
+  position:sticky !important;
+  top:0 !important;
+  z-index:100 !important;
+  margin-bottom:.65rem !important;
+  box-shadow:0 8px 24px rgba(7,56,63,.14);
+}
+
+#app-view .portal-subnav{
+  position:sticky !important;
+  top:118px !important;
+  z-index:99 !important;
+  margin-top:0 !important;
+  margin-bottom:1rem !important;
+  background:rgba(243,247,247,.98) !important;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 7px 18px rgba(7,56,63,.08);
+}
+
+#app-view [data-tab-page]{
+  scroll-margin-top:205px;
+}
+
+@media(max-width:760px){
+  #app-view .portal-toolbar{
+    position:sticky !important;
+    top:0 !important;
+  }
+  #app-view .portal-subnav{
+    position:sticky !important;
+    top:132px !important;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+  }
+}
+
+@media(max-width:640px){
+  #app-view .portal-toolbar{
+    position:sticky !important;
+    top:0 !important;
+  }
+  #app-view .portal-subnav{
+    position:sticky !important;
+    top:142px !important;
+  }
+}
