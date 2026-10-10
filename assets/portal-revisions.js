@@ -198,13 +198,22 @@ async function decorateEditor(){
             </label>
             <div class="revision-decision-actions">
               <button class="btn primary revision-resend" type="button">Reencaminhar aos mesmos pareceristas</button>
-              <button class="btn revision-accept" type="button">Aprovar versão revisada</button>
+              ${profile.role==='editor_chief'?'<button class="btn revision-accept" type="button">Aprovar versão revisada · Editor-Chefe</button>':'<span>Decisão de aceite: encaminhar ao Editor-Chefe.</span>'}
             </div>
             <small>Ao reencaminhar, será criada uma nova rodada para os mesmos pareceristas da rodada anterior. Os pareceres antigos não serão apagados.</small>
           </div>`:''}
         </article>`).join('')}
       </div>`;
 
+    const pendingRevision=list.find(r=>r.status==='submitted');
+    if(pendingRevision){
+      const guidance=$('.editor-next-actions',card);
+      if(guidance){
+        $('h4',guidance).textContent='Versão revisada recebida — ação da editoria';
+        $('p',guidance).textContent='Rodada '+pendingRevision.round_no+': abra o manuscrito revisado e a carta-resposta. O Editor-Chefe ou o Editor Executivo pode reencaminhar aos mesmos pareceristas; o aceite cabe ao Editor-Chefe.';
+        const jump=$('[data-action="revisions"]',guidance);if(jump)jump.firstChild.textContent='Analisar versão revisada';
+      }
+    }
     const anchor=$('.article-author-email',card)||$('.reviewer-management',card);
     if(anchor?.parentNode)anchor.parentNode.insertBefore(section,anchor);
     else card.appendChild(section);
