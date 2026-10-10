@@ -350,7 +350,14 @@ async function loadEditorCertificates(){
   });
 }
 
-async function loadEditor(){const reviewQuery=supabase.rpc('editorial_staff_reviews');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[]);await loadEditorCertificates()}
+async function loadEditor(){const reviewQuery=supabase.rpc('editorial_staff_reviews');const [ps,ss,aa,rr,mm,cc,pp]=await Promise.all([supabase.from('profiles').select('*').order('full_name'),supabase.from('submissions').select('*').order('submitted_at',{ascending:false}),supabase.from('review_assignments').select('*'),reviewQuery,supabase.from('editorial_messages').select('*').order('created_at',{ascending:false}),supabase.from('editorial_communications').select('*').order('created_at',{ascending:false}),supabase.from('article_publications').select('*')]);if(ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error)return notice((ps.error||ss.error||aa.error||rr.error||mm.error||cc.error||pp.error).message,'error');allProfiles=ps.data||[];renderEditorSummary(ss.data||[],aa.data||[],rr.data||[]);renderReviewerWorkload(ss.data||[],aa.data||[],rr.data||[],allProfiles);renderEditorialCommunications(ss.data||[],allProfiles,cc.data||[]);if(currentProfile.role==='editor_chief')renderUsers(allProfiles);await renderEditorSubmissions(ss.data||[],aa.data||[],rr.data||[],mm.data||[],cc.data||[],pp.data||[]);await loadEditorCertificates();renderEditorialActionQueue(ss.data||[],aa.data||[],rr.data||[],mm.data||[],pp.data||[])}
+function renderEditorialActionQueue(subs,assignments,reviews,messages,publications){
+  const summary=document.getElementById('editor-summary');if(!summary)return;
+  let section=document.getElementById('editor-action-queue');if(!section){section=document.createElement('section');section.id='editor-action-queue';summary.after(section)}
+  const items=subs.filter(s=>s.status!=='withdrawn').map(s=>{const aa=assignments.filter(a=>a.submission_id===s.id);return {s,plan:editorialActionPlan(s,aa,reviews.filter(r=>aa.some(a=>a.id===r.assignment_id)),messages.find(m=>m.submission_id===s.id),publications.find(p=>p.submission_id===s.id))}});
+  section.innerHTML='<h3>Ações por artigo</h3><p>Selecione um artigo para ver as ações e os responsáveis. Decisões finais de aceite ou rejeição cabem ao Editor-Chefe.</p>'+items.map(({s,plan})=>'<article style="padding:14px;border:1px solid #c7ddda;border-radius:10px;margin:10px 0"><strong>'+esc(s.code||'')+' · '+esc(s.title)+'</strong><p><b>'+esc(plan.title)+'</b></p><small>'+esc(plan.owner)+'</small><p><button type="button" class="btn primary open-article-actions" data-id="'+esc(s.id)+'">Ver ações deste artigo</button></p></article>').join('');
+  section.querySelectorAll('.open-article-actions').forEach(b=>b.onclick=()=>{showPortalTab('editor','submissions');document.getElementById('submission-search').value='';document.getElementById('submission-status-filter').value='';document.getElementById('submission-priority-filter').value='';document.getElementById('submission-search').dispatchEvent(new Event('input'));const card=[...document.querySelectorAll('.editorial-card')].find(c=>c.dataset.submissionId===b.dataset.id);if(card){card.hidden=false;card.scrollIntoView({block:'start',behavior:'smooth'})}});
+}
 
 function renderEditorialCommunications(submissions,profiles,communications){
   const form=$('#editorial-communication-form'),recipient=$('#comm-recipient'),submission=$('#comm-submission'),type=$('#comm-type'),template=$('#comm-template'),subject=$('#comm-subject'),message=$('#comm-message'),history=$('#communication-history'),historyFilter=$('#comm-history-filter');
@@ -444,6 +451,60 @@ function renderEditorialCommunications(submissions,profiles,communications){
       btn.disabled=false;
     }
   };
+}
+
+function editorialActionPlan(s,assignments,reviews,lastMessage,publication){
+  const round=Math.max(1,...assignments.map(a=>Number(a.round_no)||1));
+  const current=assignments.filter(a=>(Number(a.round_no)||1)===round);
+  const reports=reviews.filter(r=>current.some(a=>a.id===r.assignment_id)&&r.submitted);
+  const pending=current.filter(a=>!reports.some(r=>r.assignment_id===a.id));
+  const actions=[];
+  const add=(label,target,owner='Ambos os editores',value='')=>actions.push({label,target,owner,value});
+  let title='',detail='',owner='Editor-Chefe ou Editor Executivo';
+  if(['submitted','under_screening'].includes(s.status)){
+    title='Concluir a triagem';detail='Confira o manuscrito anonimizado, a folha de rosto e a adequação ao escopo. Depois selecione os pareceristas.';
+    add('Conferir manuscrito','manuscript');add('Conferir folha de rosto','cover');add('Selecionar pareceristas','assign');
+  }else if(s.status==='under_review'){
+    if(!current.length){title='Encaminhar para avaliação';detail='O artigo está em avaliação, mas ainda não tem parecerista atribuído.';add('Selecionar pareceristas','assign')}
+    else if(pending.length){title='Acompanhar pareceres pendentes';detail=`Rodada ${round}: ${reports.length} parecer(es) recebido(s) e ${pending.length} pendente(s). Verifique os prazos e envie lembretes quando necessário.`;add('Acompanhar / enviar lembrete','reviewers');if(reports.length)add('Ler pareceres recebidos','reports')}
+    else{title='Definir o retorno ao autor';detail=`Os ${reports.length} parecer(es) da rodada ${round} foram recebidos. Leia os comentários e prepare a decisão.`;add('Ler pareceres','reports');add('Preparar pedido de revisão','communication','Ambos os editores','revision_requested');add('Preparar aceite','communication','Editor-Chefe','accepted');add('Preparar rejeição','communication','Editor-Chefe','rejected')}
+  }else if(s.status==='revision_requested'){
+    title='Acompanhar a versão revisada';detail='Aguarde o envio do autor. Se uma nova versão já tiver sido recebida, confira o manuscrito e a carta-resposta para reencaminhar aos pareceristas ou decidir o aceite.';add('Ver versões / carta-resposta','revisions');add('Preparar mensagem ao autor','communication');
+  }else if(s.status==='accepted'){
+    title=publication?'Conferir publicação e comunicação':'Preparar a publicação';detail=publication?'Confira os dados publicados e a comunicação ao autor.':'Registre volume, edição, DOI e endereço do artigo após concluir a preparação da publicação.';add('Ver dados da publicação','publication');add('Preparar comunicação de aceite','communication','Editor-Chefe','accepted');
+  }else if(s.status==='rejected'){
+    title='Conferir comunicação da decisão';detail='Verifique se o autor recebeu a decisão e os comentários liberados.';add('Preparar comunicação de rejeição','communication','Editor-Chefe','rejected');
+  }else{title='Consultar histórico';detail='Consulte os dados e as comunicações desta submissão.';add('Ver comunicação ao autor','communication')}
+  const unreleased=reviews.filter(r=>r.submitted&&!r.released_to_author).length;
+  if(unreleased)add(`Liberar comentários ao autor (${unreleased})`,'release');
+  if(lastMessage&&lastMessage.email_status!=='sent')add('Verificar e-mail não enviado','communication');
+  if(['accepted','rejected'].includes(s.status))owner='Editor-Chefe: decisão final · Editor Executivo: acompanhamento';
+  return {title,detail,owner,actions,unreleased};
+}
+function editorialActionHtml(plan){
+  return `<section class="editor-next-actions" style="border:2px solid #0a5961;border-radius:12px;padding:16px;background:#f0f8f7;margin:12px 0"><span class="kicker">O QUE PRECISA SER FEITO</span><h4 style="margin:6px 0;font-size:1.1rem">${esc(plan.title)}</h4><p>${esc(plan.detail)}</p><p><b>Responsável:</b> ${esc(plan.owner)}</p><div class="item-actions">${plan.actions.map(a=>{const allowed=a.owner!=='Editor-Chefe'||currentProfile.role==='editor_chief';return `<button type="button" class="btn ${allowed?'primary':'ghost'} editor-guided-action" data-action="${a.target}" data-value="${a.value}" ${allowed?'':'disabled'}>${esc(a.label)}<small style="display:block;font-size:.7rem">${esc(a.owner)}${allowed?'':' · acesso exclusivo'}</small></button>`}).join('')}</div><small>Os botões de preparação abrem o formulário. Revise a mensagem antes de confirmar o envio.</small></section>`;
+}
+function bindEditorialActions(card,s,reviews){
+  const reveal=(target)=>{if(!target)return notice('Esta opção ainda não está disponível neste artigo.','error');let node=target;while(node&&node!==card){if(node.tagName==='DETAILS')node.open=true;node=node.parentElement}target.scrollIntoView({block:'center',behavior:'smooth'});target.focus?.({preventScroll:true})};
+  card.querySelectorAll('.editor-guided-action').forEach(button=>button.onclick=async()=>{
+    const action=button.dataset.action;
+    if(action==='manuscript'||action==='cover')return card.querySelector(action==='manuscript'?'.manuscript-btn':'.cover-btn')?.click();
+    if(action==='assign')return reveal(card.querySelector('.reviewer-select'));
+    if(action==='reports')return reveal([...card.querySelectorAll('details.review-block')].find(d=>d.querySelector('summary')));
+    if(action==='publication')return reveal(card.querySelector('.publication-management'));
+    if(action==='revisions')return reveal(card.querySelector('.editor-revision-flow'));
+    if(action==='reviewers'){showPortalTab('editor','reviewers');return}
+    if(action==='communication'){
+      const type=card.querySelector('.article-comm-type');const value=button.dataset.value;
+      if(value){type.value=value;type.dispatchEvent(new Event('change'));const template=card.querySelector('.article-comm-template');template.value=({revision_requested:'author_revision',accepted:'accept',rejected:'reject'})[value];template.dispatchEvent(new Event('change'))}
+      return reveal(card.querySelector('.article-comm-message'));
+    }
+    if(action==='release'){
+      if(!confirm('Liberar os comentários dos pareceres finalizados ao autor? A identidade dos pareceristas e os comentários confidenciais permanecerão restritos.'))return;
+      button.disabled=true;
+      try{for(const review of reviews.filter(r=>r.submitted&&!r.released_to_author)){const result=await supabase.rpc('editor_set_review_release',{p_review_id:review.id});if(result.error)throw result.error}notice('Comentários liberados ao autor.','ok');await loadEditor()}catch(e){notice('Não foi possível concluir a liberação: '+e.message,'error')}finally{button.disabled=false}
+    }
+  });
 }
 
 function editorWorkflowState(s,assignments,reviews){
@@ -633,6 +694,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
     const author=profileMap[s.author_id];
     const publication=publications.find(p=>p.submission_id===s.id);
     const flow=editorWorkflowState(s,as,rs);
+    const actionPlan=editorialActionPlan(s,as,rs,messages.find(m=>m.submission_id===s.id),publication);
     const received=rs.filter(r=>r.submitted).length;
     const pending=as.filter(a=>!a.completed_at).length;
     const lastMessage=messages.find(m=>m.submission_id===s.id);
@@ -660,13 +722,14 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       : '';
     const div=document.createElement('article');
     div.className='item-card editorial-card priority-'+flow.priority;
+    div.dataset.submissionId=s.id;
     div.innerHTML=`
       <div class="editorial-card-head">
         <div class="item-meta"><span class="status">${esc(labels[s.status]||s.status)}</span><span>${esc(s.code||'')}</span><span>${fmt(s.submitted_at)}</span></div>
         <span class="workflow-badge workflow-${flow.key}">${flow.label}</span>
       </div>
       <h3>${esc(s.title)}</h3>
-      <div class="workflow-next"><strong>Próxima ação recomendada</strong><span>${esc(flow.text)}</span></div>
+      ${editorialActionHtml(actionPlan)}
       <div class="review-progress">
         <div><b>${as.length}</b><span>Atribuídos</span></div>
         <div><b>${received}</b><span>Recebidos</span></div>
@@ -749,6 +812,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         </div>
       </section>`;
 
+    bindEditorialActions(div,s,rs);
     div.querySelector('.manuscript-btn').onclick=async()=>{try{location.href=await signed('manuscripts',s.manuscript_path)}catch(e){notice(e.message,'error')}};
     const coverBtn=div.querySelector('.cover-btn');if(coverBtn)coverBtn.onclick=async()=>{try{location.href=await signed('cover-sheets',s.cover_sheet_path)}catch(e){notice(e.message,'error')}};
     div.querySelector('.status-select').onchange=async e=>{
