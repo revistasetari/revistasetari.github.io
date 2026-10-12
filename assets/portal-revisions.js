@@ -261,8 +261,8 @@ async function decorateReviewer(){
   if(!panel)return;
   const {data,error}=await supabase.rpc('reviewer_assigned_submissions');
   if(error||!data?.length)return;
-  const cards=$$('article.item-card',panel);
-  data.forEach((a,i)=>{
+  const cards=$('article.item-card',panel);
+  data.filter(a=>!window.SETARI_EDITION_SCOPE||window.SETARI_EDITION_SCOPE.includes(a.submission_id)).forEach((a,i)=>{
     const card=cards[i];
     if(!card||card.dataset.revisionRoundUi==='1')return;
     card.dataset.revisionRoundUi='1';
@@ -318,4 +318,5 @@ async function init(){
     if(e.target.closest('.portal-subnav-btn'))setTimeout(scheduleDecorate,120);
   });
 }
+document.addEventListener('setari:edition-change',scheduleDecorate);
 init();
