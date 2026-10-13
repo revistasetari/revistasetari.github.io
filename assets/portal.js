@@ -823,6 +823,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         <label>Mensagem
           <textarea class="article-comm-message" rows="6" placeholder="Escreva a mensagem que será enviada ao autor..."></textarea>
         </label>
+        <small class="article-comm-scope-note">Na solicitação de revisão, o sistema inclui somente os comentários aos autores deste artigo. Comentários confidenciais e dados de outras edições não são enviados.</small>
         <div class="article-communication-send-row">
           <button class="btn primary article-comm-send" type="button">Registrar e enviar e-mail</button>
           <span>Para: <b>${esc(author?.email||'')}</b> · Respostas: setarijournal@gmail.com</span>
@@ -918,7 +919,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
         author_revision:{
           type:'revision_requested',
           subject:`SETARI · Revisão solicitada · ${s.code||'Submissão'}`,
-          message:`Prezado(a) ${name},\n\nApós a avaliação editorial e dos pareceristas, solicitamos a revisão do manuscrito ${s.code||''} — ${s.title}. Consulte os pareceres disponibilizados na Área Restrita, realize os ajustes solicitados e encaminhe a nova versão.\n\nAtenciosamente,\nSETARI Editorial Office`
+          message:`Prezado(a) ${name},\n\nApós a avaliação editorial e dos pareceristas, solicitamos a revisão do manuscrito ${s.code||''} — ${s.title}.\n\nOs comentários destinados aos autores referentes exclusivamente a este manuscrito serão incluídos automaticamente neste e-mail e também ficarão disponíveis na Área Restrita da SETARI. Comentários confidenciais à equipe editorial nunca serão enviados ao autor.\n\nRealize os ajustes solicitados e encaminhe a nova versão acompanhada da carta-resposta.\n\nAtenciosamente,\nSETARI Editorial Office`
         },
         review_invitation:{
           type:'review_invitation',
@@ -969,6 +970,14 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
       btn.disabled=true;btn.textContent='Enviando…';
       try{
         if(formalDecision){
+          if(typeValue==='revision_requested'){
+            const releasable=rs.filter(r=>r.submitted&&!r.released_to_author);
+            for(const review of releasable){
+              const released=await supabase.rpc('editor_set_review_release',{p_review_id:review.id});
+              if(released.error)throw new Error('Não foi possível liberar os comentários deste artigo ao autor: '+released.error.message);
+              review.released_to_author=true;
+            }
+          }
           const created=await supabase.rpc('create_editorial_message',{p_submission_id:s.id,p_message:text,p_decision:typeValue});
           if(created.error)throw created.error;
           let statusError=null;
