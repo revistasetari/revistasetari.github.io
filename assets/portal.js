@@ -538,12 +538,42 @@ function editorWorkflowState(s,assignments,reviews){
   if(s.status==='withdrawn')return {key:'done',label:'RETIRADO',text:'Submissão retirada do fluxo editorial.',priority:4};
   return {key:'info',label:'ACOMPANHAMENTO',text:'Acompanhe o andamento desta submissão.',priority:3};
 }
+let editorSummaryFlowFilter='';
+let editorSummaryFlowLabel='';
+
+function openEditorSummaryBucket(flowKey,label){
+  editorSummaryFlowFilter=flowKey;
+  editorSummaryFlowLabel=label;
+  showPortalTab('editor','submissions');
+
+  const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
+  if(search)search.value='';
+  if(status)status.value='';
+  if(priority)priority.value='';
+
+  applyEditorSubmissionFilters();
+
+  requestAnimationFrame(()=>{
+    const box=$('#editor-submissions');
+    const first=box?.querySelector('.editorial-card:not([hidden])');
+    if(first)first.scrollIntoView({block:'start',behavior:'smooth'});
+    else box?.scrollIntoView({block:'start',behavior:'smooth'});
+  });
+}
+
 function renderEditorSummary(subs,assign,reviews){
   const triage=subs.filter(s=>s.status==='submitted'||s.status==='under_screening').length;
   const awaiting=subs.filter(s=>s.status==='under_review'&&assign.some(a=>a.submission_id===s.id&&!a.completed_at)).length;
   const decisions=subs.filter(s=>{if(s.status!=='under_review')return false;const aa=assign.filter(a=>a.submission_id===s.id);return aa.length>0&&aa.every(a=>a.completed_at)}).length;
   const revisions=subs.filter(s=>s.status==='revision_requested').length;
-  $('#editor-summary').innerHTML=`<div class="summary-card action-card"><b>${triage}</b><span>Triagem / ação inicial</span></div><div class="summary-card"><b>${awaiting}</b><span>Aguardando pareceres</span></div><div class="summary-card action-card"><b>${decisions}</b><span>Decisão pendente</span></div><div class="summary-card"><b>${revisions}</b><span>Aguardando autor</span></div>`;
+  const cards=[
+    {key:'triage',count:triage,label:'Triagem / ação inicial',action:true},
+    {key:'waiting',count:awaiting,label:'Aguardando pareceres'},
+    {key:'decision',count:decisions,label:'Decisão pendente',action:true},
+    {key:'revision',count:revisions,label:'Aguardando autor'}
+  ];
+  $('#editor-summary').innerHTML=cards.map(x=>`<button type="button" class="summary-card summary-filter-card ${x.action?'action-card':''}" data-flow-key="${x.key}" data-flow-label="${esc(x.label)}" ${x.count===0?'disabled':''} aria-label="Abrir ${esc(x.label)}: ${x.count} artigo(s)"><b>${x.count}</b><span>${esc(x.label)}</span><small>${x.count===0?'Nenhum artigo':'Clique para ver'}</small></button>`).join('');
+  $('#editor-summary .summary-filter-card').forEach(btn=>btn.onclick=()=>openEditorSummaryBucket(btn.dataset.flowKey,btn.dataset.flowLabel));
 }
 function reviewRecommendationLabel(value){
   return ({accept:'Aceitar',minor_revision:'Revisão menor',major_revision:'Revisão maior',reject:'Rejeitar'})[value]||value||'—';
@@ -721,18 +751,23 @@ function applyEditorSubmissionFilters(){
     const okSearch=!search||String(card.dataset.search||'').includes(search);
     const okStatus=!status||card.dataset.status===status;
     const okPriority=!priority||card.dataset.priority===priority;
-    const show=okSearch&&okStatus&&okPriority;
+    const okSummary=!editorSummaryFlowFilter||card.dataset.flowKey===editorSummaryFlowFilter;
+    const show=okSearch&&okStatus&&okPriority&&okSummary;
     card.hidden=!show;
     if(show)visible++;
   });
   const counter=$('#submission-visible-count');
-  if(counter)counter.textContent=visible===total?total+' submissão(ões)':'Mostrando '+visible+' de '+total+' submissão(ões)';
+  if(counter){
+    if(editorSummaryFlowFilter)counter.textContent='Filtro: '+editorSummaryFlowLabel+' · '+visible+' artigo(s)';
+    else counter.textContent=visible===total?total+' submissão(ões)':'Mostrando '+visible+' de '+total+' submissão(ões)';
+  }
 }
 function bindEditorSubmissionNavigation(){
   const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
-  if(search)search.oninput=applyEditorSubmissionFilters;
-  if(status)status.onchange=applyEditorSubmissionFilters;
-  if(priority)priority.onchange=applyEditorSubmissionFilters;
+  const clearSummaryFilter=()=>{editorSummaryFlowFilter='';editorSummaryFlowLabel='';};
+  if(search)search.oninput=()=>{clearSummaryFilter();applyEditorSubmissionFilters()};
+  if(status)status.onchange=()=>{clearSummaryFilter();applyEditorSubmissionFilters()};
+  if(priority)priority.onchange=()=>{clearSummaryFilter();applyEditorSubmissionFilters()};
   const collapse=$('#collapse-submissions-btn'),expand=$('#expand-submissions-btn');
   if(collapse)collapse.onclick=()=>{
     document.querySelectorAll('#editor-submissions .editorial-card').forEach(card=>{
@@ -1072,6 +1107,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
     div.dataset.search=[s.code||'',s.title||'',author?.full_name||'',author?.email||''].join(' ').toLowerCase();
     div.dataset.status=s.status||'';
     div.dataset.priority=String(flow.priority||'');
+    div.dataset.flowKey=flow.key||'';
 
     const firstDetail=[...div.children].find(el=>el.matches('.submission-details'));
     if(firstDetail){
