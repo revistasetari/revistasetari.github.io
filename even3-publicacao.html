@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>SETARI · Preparação da Edição Even3</title><link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="assets/style.css">
+<style>main{max-width:1100px;margin:2rem auto;padding:1rem}.box{padding:1.3rem;margin:1rem 0;border:1px solid #cbdedb;border-radius:12px;background:white}.tools{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}button,.action{padding:.7rem 1rem;border:0;border-radius:8px;background:#075862;color:#fff;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}table{width:100%;border-collapse:collapse}td,th{padding:.7rem;border-bottom:1px solid #e0e9e8;text-align:left}label{display:block;font-weight:700}.muted{color:#526c6c}.warning{background:#fff8e3;padding:.9rem;border-radius:8px}input{padding:.5rem;max-width:100%}@media(max-width:700px){table{display:block;overflow:auto}}</style></head>
+<body><main><p><a href="portal.html">← Voltar à Área Restrita</a></p><h1>Publicação da Edição 1 · Even3</h1><p>Ferramenta editorial de preparação da edição inaugural contratada (até 15 artigos). A gestão das submissões e dos pareceres permanece na SETARI.</p>
+<div id="gate" class="box">Verificando sessão e permissão editorial…</div>
+<section id="workspace" hidden><div class="box"><h2>Conferência de artigos aprovados</h2><p id="count"></p><div class="tools"><button id="refresh">Atualizar artigos aprovados</button><button id="csv" disabled>Exportar CSV</button><button id="json" disabled>Exportar JSON</button></div><p class="muted">Exportação local para conferência e cadastro na Even3. Nenhum dado é enviado automaticamente à Even3.</p><div id="list"></div></div>
+<div class="box"><h2>Publicação e DOI</h2><p class="warning">Não marque artigos como publicados antes da confirmação da Even3. Confira autoria, versão final, metadados, URL e DOI no painel da Even3. Não use links temporários de arquivos restritos.</p><p>Depois da publicação, registre os endereços definitivos no catálogo público da SETARI. Os DOIs não são gerados por esta ferramenta.</p><p><a href="current.html">Ver edição atual da SETARI</a></p></div>
+</section></main>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const sb=createClient('https://iqfrakjlabkjxygdiktp.supabase.co','sb_publishable_kntNAWBHQRobiuQmh2xStA_BnCnz0p1');
+const gate=document.getElementById('gate'),work=document.getElementById('workspace'),list=document.getElementById('list');
+let rows=[];
+const clean=x=>String(x??'');
+const el=(tag,txt)=>{const e=document.createElement(tag);e.textContent=clean(txt);return e};
+function download(name,type,content){const url=URL.createObjectURL(new Blob([content],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+const csvCell=v=>'"'+clean(v).replace(/"/g,'""').replace(/^[=+@\-\t\r]/,'\u0027$&')+'"';
+function safeDate(v){return v?new Date(v).toLocaleDateString('pt-BR'):''}
+async function load(){
+ document.getElementById('csv').disabled=true;document.getElementById('json').disabled=true;
+ const {data:editionMap,error:mapErr}=await sb.rpc('submission_edition_map');if(mapErr)throw new Error('Não foi possível verificar a edição dos artigos: '+mapErr.message);
+ const ids=new Set((editionMap||[]).filter(x=>Number(x.edition_number)===1).map(x=>String(x.submission_id)));
+ const {data,error}=await sb.from('submissions').select('id,code,title,abstract,keywords,area,status,submitted_at').eq('status','accepted').order('submitted_at',{ascending:true});if(error)throw error;
+ rows=(data||[]).filter(x=>ids.has(String(x.id))).map(x=>({submission_id:x.id,code:x.code||'',title:x.title||'',abstract:x.abstract||'',keywords:x.keywords||'',area:x.area||'',date_submitted:safeDate(x.submitted_at),edition:1,status:'accepted'}));
+ document.getElementById('count').textContent=rows.length+' artigo(s) aceito(s) na Edição 1; limite contratado informado: 15.';
+ list.replaceChildren();if(rows.length>15){list.append(el('p','ATENÇÃO: há mais de 15 artigos aceitos. Defina quais estarão no contrato antes do envio.'))}
+ if(!rows.length)list.append(el('p','Nenhum artigo aceito encontrado na Edição 1. Os artigos em avaliação não são exibidos.'));
+ else{const table=document.createElement('table'),head=document.createElement('tr');for(const h of ['Código','Título','Situação'])head.append(el('th',h));table.append(head);for(const r of rows){const tr=document.createElement('tr');for(const v of [r.code,r.title,'Aceito'])tr.append(el('td',v));table.append(tr)}list.append(table)}
+ document.getElementById('csv').disabled=!rows.length;document.getElementById('json').disabled=!rows.length;
+}
+async function init(){try{
+ const {data:{user},error}=await sb.auth.getUser();if(error||!user)throw new Error('Entre primeiro na Área Restrita da SETARI.');
+ const {data:profile,error:pe}=await sb.from('profiles').select('role').eq('id',user.id).single();if(pe)throw pe;
+ if(!['editor_chief','managing_editor'].includes(profile?.role))throw new Error('Esta ferramenta é exclusiva da equipe editorial.');
+ gate.textContent='Acesso editorial autorizado. Exporte somente dados de artigos aceitos para publicação.';work.hidden=false;await load();
+ }catch(e){gate.textContent='Acesso ou carregamento indisponível: '+e.message;work.hidden=true}}
+document.getElementById('refresh').onclick=async()=>{try{await load()}catch(e){gate.textContent='Falha na atualização: '+e.message}};
+document.getElementById('csv').onclick=()=>{const cols=['submission_id','code','title','abstract','keywords','area','date_submitted','edition','status'];download('SETARI-edicao-1-Even3.csv','text/csv;charset=utf-8','\ufeff'+cols.join(';')+'\r\n'+rows.map(r=>cols.map(k=>csvCell(r[k])).join(';')).join('\r\n'))};
+document.getElementById('json').onclick=()=>download('SETARI-edicao-1-Even3.json','application/json;charset=utf-8',JSON.stringify({journal:'SETARI',edition:1,provider:'Even3 Publicações',contracted_article_limit:15,generated_at:new Date().toISOString(),articles:rows},null,2));
+init();
+</script></body></html>
