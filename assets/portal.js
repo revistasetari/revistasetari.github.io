@@ -573,7 +573,7 @@ function renderEditorSummary(subs,assign,reviews){
     {key:'revision',count:revisions,label:'Aguardando autor'}
   ];
   $('#editor-summary').innerHTML=cards.map(x=>`<button type="button" class="summary-card summary-filter-card ${x.action?'action-card':''}" data-flow-key="${x.key}" data-flow-label="${esc(x.label)}" ${x.count===0?'disabled':''} aria-label="Abrir ${esc(x.label)}: ${x.count} artigo(s)"><b>${x.count}</b><span>${esc(x.label)}</span><small>${x.count===0?'Nenhum artigo':'Clique para ver'}</small></button>`).join('');
-  $('#editor-summary .summary-filter-card').forEach(btn=>btn.onclick=()=>openEditorSummaryBucket(btn.dataset.flowKey,btn.dataset.flowLabel));
+  document.querySelectorAll('#editor-summary .summary-filter-card').forEach(btn=>btn.onclick=()=>openEditorSummaryBucket(btn.dataset.flowKey,btn.dataset.flowLabel));
 }
 function reviewRecommendationLabel(value){
   return ({accept:'Aceitar',minor_revision:'Revisão menor',major_revision:'Revisão maior',reject:'Rejeitar'})[value]||value||'—';
