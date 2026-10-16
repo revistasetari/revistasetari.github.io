@@ -611,6 +611,10 @@ function renderUsers(profiles){
       const d=document.createElement('div');
       d.className='item-card user-row';
       d.innerHTML=`<div><strong>${esc(p.full_name||'Sem nome')}</strong><div class="item-meta"><span>${esc(p.email)}</span><span>${esc(p.institution||'')}</span>${p.force_password_change?'<span class="status">Troca de senha obrigatória</span>':''}</div></div><div class="item-actions"><select class="role-select"><option value="author" ${p.role==='author'?'selected':''}>Autor</option><option value="reviewer" ${p.role==='reviewer'?'selected':''}>Parecerista</option><option value="managing_editor" ${p.role==='managing_editor'?'selected':''}>Editor Executivo</option><option value="editor_chief" ${p.role==='editor_chief'?'selected':''}>Editor-Chefe</option></select>${p.id!==currentUser.id?'<input class="temp-password" type="password" minlength="8" placeholder="Senha temporária"><button class="btn ghost reset-password-btn" type="button">Resetar senha</button>':''}</div>`;
+      const historyBtn=document.createElement('button');
+      historyBtn.type='button';historyBtn.className='btn ghost';historyBtn.textContent='Ver histórico completo';
+      d.querySelector('.item-actions').prepend(historyBtn);
+      historyBtn.onclick=()=>showUserActivityHistory(p,d);
       const sel=d.querySelector('.role-select');
       sel.onchange=async()=>{
         const previous=p.role;
@@ -652,6 +656,59 @@ function renderUsers(profiles){
   });
 }
 
+async function showUserActivityHistory(profile,row){
+  if(currentProfile?.role!=='editor_chief')return notice('Acesso restrito ao Editor-Chefe.','error');
+  const old=row.querySelector('.setari-user-history');
+  if(old){old.remove();return}
+  const panel=document.createElement('section');panel.className='setari-user-history';
+  panel.style.cssText='grid-column:1/-1;width:100%;padding:16px;margin-top:12px;border:1px solid #c8dddd;border-radius:12px;background:#f7fbfb';
+  panel.innerHTML='<strong>Histórico de '+esc(profile.full_name||profile.email)+'</strong><p>Carregando registros existentes…</p>';
+  row.appendChild(panel);
+  const tables=['submissions','review_assignments','reviews','editorial_messages','editorial_communications','certificate_issues','article_publications'];
+  const result=await Promise.all(tables.map(t=>supabase.from(t).select('*').limit(2000)));
+  const data=Object.fromEntries(tables.map((t,i)=>[t,result[i].error?[]:(result[i].data||[])]));
+  const failures=tables.filter((t,i)=>result[i].error).map(t=>t+': '+result[tables.indexOf(t)].error.message);
+  const own=data.submissions.filter(x=>x.author_id===profile.id);
+  const assignments=data.review_assignments.filter(x=>x.reviewer_id===profile.id);
+  const assignmentIds=new Set(assignments.map(x=>x.id));
+  const reviews=data.reviews.filter(x=>x.reviewer_id===profile.id||assignmentIds.has(x.assignment_id));
+  const relevantIds=new Set([...own.map(x=>x.id),...assignments.map(x=>x.submission_id)]);
+  const items=[];
+  const add=(kind,date,submission,description)=>items.push({kind,date,submission,description});
+  own.forEach(x=>add('Submissão',x.submitted_at||x.created_at,x, x.title||'Artigo'));
+  assignments.forEach(x=>add('Avaliação atribuída',x.assigned_at||x.created_at,data.submissions.find(s=>s.id===x.submission_id),x.completed_at?'Concluída':'Pendente'));
+  reviews.forEach(x=>add('Parecer',x.submitted_at||x.created_at,data.submissions.find(s=>s.id===data.review_assignments.find(a=>a.id===x.assignment_id)?.submission_id),x.recommendation||'Parecer registrado'));
+  data.editorial_communications.filter(x=>x.recipient_id===profile.id||x.sender_id===profile.id).forEach(x=>add('Comunicação',x.created_at,data.submissions.find(s=>s.id===x.submission_id),'Comunicação editorial'));
+  data.editorial_messages.filter(x=>relevantIds.has(x.submission_id)&&(x.recipient_id===profile.id||own.some(s=>s.id===x.submission_id))).forEach(x=>add('Mensagem do artigo',x.created_at,data.submissions.find(s=>s.id===x.submission_id),'Mensagem editorial'));
+  data.certificate_issues.filter(x=>x.user_id===profile.id||x.recipient_id===profile.id||x.reviewer_id===profile.id).forEach(x=>add('Certificado',x.created_at,null,'Certificado registrado'));
+  items.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const editionOptions=[...new Set(items.map(x=>x.submission?.edition_number).filter(Boolean))].sort();
+  panel.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between"><strong>Histórico de '+esc(profile.full_name||profile.email)+'</strong><button type="button" class="btn ghost close-history">Fechar</button></div>'+
+    '<p>'+items.length+' registros encontrados. Exibição somente para consulta; sem alterações nos dados.</p>'+
+    '<label>Edição <select class="history-edition"><option value="">Todas</option>'+editionOptions.map(n=>'<option value="'+esc(n)+'">Edição '+esc(n)+'</option>').join('')+'</select></label> '+
+    '<label>Atividade <select class="history-kind"><option value="">Todas</option>'+[...new Set(items.map(x=>x.kind))].map(k=>'<option>'+esc(k)+'</option>').join('')+'</select></label>'+
+    '<div class="history-records" style="margin-top:12px;display:grid;gap:8px"></div>'+
+    (failures.length?'<p role="status">Alguns registros não puderam ser consultados: '+esc(failures.join('; '))+'</p>':'');
+  panel.querySelector('.close-history').onclick=()=>panel.remove();
+  const draw=()=>{
+    const edition=panel.querySelector('.history-edition').value,kind=panel.querySelector('.history-kind').value;
+    const visible=items.filter(x=>(!edition||String(x.submission?.edition_number)===edition)&&(!kind||x.kind===kind));
+    panel.querySelector('.history-records').innerHTML=visible.length?visible.map((x,i)=>
+      '<div style="padding:10px;background:white;border:1px solid #dce8e8;border-radius:8px"><strong>'+esc(x.kind)+'</strong> · '+esc(x.date?fmt(x.date):'Data não registrada')+
+      '<div>'+esc(x.description)+' '+(x.submission?'· '+esc(x.submission.title||'Artigo')+' · Edição '+esc(x.submission.edition_number||'—'):'')+'</div>'+
+      (x.submission?'<button type="button" class="btn ghost history-open" data-submission="'+esc(x.submission.id)+'" data-edition="'+esc(x.submission.edition_number||1)+'">Abrir artigo na edição</button>':'')+'</div>').join(''):empty('Nenhuma atividade encontrada para estes filtros.');
+    panel.querySelectorAll('.history-open').forEach(btn=>btn.onclick=async()=>{
+      selectedEdition=Number(btn.dataset.edition);sessionStorage.setItem('setariEditorialEdition',String(selectedEdition));
+      await loadRolePanel();showPortalTab('editor','submissions');
+      const cards=[...document.querySelectorAll('#editor-submissions .editorial-card')];
+      const match=cards.find(c=>c.innerHTML.includes(btn.dataset.submission));
+      if(match){match.scrollIntoView({block:'center'});match.classList.remove('is-collapsed')}
+      else notice('Edição aberta. Localize o artigo na lista de submissões.','ok');
+    });
+  };
+  panel.querySelector('.history-edition').onchange=draw;
+  panel.querySelector('.history-kind').onchange=draw;draw();
+}
 function applyEditorSubmissionFilters(){
   const box=$('#editor-submissions');
   if(!box)return;
