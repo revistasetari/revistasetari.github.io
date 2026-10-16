@@ -612,7 +612,7 @@ function renderUsers(profiles){
       d.className='item-card user-row';
       d.innerHTML=`<div><strong>${esc(p.full_name||'Sem nome')}</strong><div class="item-meta"><span>${esc(p.email)}</span><span>${esc(p.institution||'')}</span>${p.force_password_change?'<span class="status">Troca de senha obrigatória</span>':''}</div></div><div class="item-actions"><select class="role-select"><option value="author" ${p.role==='author'?'selected':''}>Autor</option><option value="reviewer" ${p.role==='reviewer'?'selected':''}>Parecerista</option><option value="managing_editor" ${p.role==='managing_editor'?'selected':''}>Editor Executivo</option><option value="editor_chief" ${p.role==='editor_chief'?'selected':''}>Editor-Chefe</option></select>${p.id!==currentUser.id?'<input class="temp-password" type="password" minlength="8" placeholder="Senha temporária"><button class="btn ghost reset-password-btn" type="button">Resetar senha</button>':''}</div>`;
       const historyBtn=document.createElement('button');
-      historyBtn.type='button';historyBtn.className='btn ghost';historyBtn.textContent='Ver histórico completo';
+      historyBtn.type='button';historyBtn.className='btn ghost user-history-btn';historyBtn.textContent='Ver histórico completo';
       d.querySelector('.item-actions').insertBefore(historyBtn,d.querySelector('.item-actions').firstChild);
       historyBtn.onclick=()=>showUserActivityHistory(p,d);
       const sel=d.querySelector('.role-select');
