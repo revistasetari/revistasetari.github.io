@@ -29,8 +29,7 @@ function showPortalTab(scope,target,{scroll=false}={}){
     b.setAttribute('aria-selected',active?'true':'false');
   });
   const targetPage=pages.find(p=>p.dataset.tabPage===target);
-  // Scroll only following an explicit tab click.
-  if(scroll&&targetPage)requestAnimationFrame(()=>targetPage.scrollIntoView({block:'start',behavior:'instant'}));
+  // Tab selection changes content without forcing a scroll; explicit deep links retain their own navigation.
   return !!targetPage;
 }
 document.addEventListener('click',async e=>{
@@ -40,7 +39,7 @@ document.addEventListener('click',async e=>{
   const nav=btn.closest('.portal-subnav');
   if(!nav)return;
   const scope=nav.dataset.tabScope,target=btn.dataset.tabTarget;
-  const opened=showPortalTab(scope,target,{scroll:true});
+  const opened=showPortalTab(scope,target);
   if(!opened)return;
   if(scope==='editor'&&target==='users'&&currentProfile?.role==='editor_chief'){
     try{
