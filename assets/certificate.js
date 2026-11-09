@@ -70,6 +70,15 @@ async function load(){
     return;
   }
 
+  const holder=String(data.metadata?.holder_name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
+  const chief={name:'Dr. Leonardo de Carvalho Vidal',role:'Editor-in-Chief'};
+  const executive={name:'Dra. Denise Stolle da Luz Weiss',role:'Executive Editor'};
+  const mode=data.metadata?.signer_mode||'both';
+  let signers=mode==='editor_chief'?[chief]:mode==='managing_editor'?[executive]:[chief,executive];
+  // Prevent editors from validating their own certificates.
+  if(holder.includes('denise stolle da luz weiss'))signers=signers.filter(s=>s!==executive);
+  if(holder.includes('leonardo de carvalho vidal'))signers=signers.filter(s=>s!==chief);
+  if(!signers.length)signers=[holder.includes('denise stolle da luz weiss')?chief:executive];
   const title=titleFor(data.certificate_type);
   root.innerHTML=`
     <section class="sheet">
@@ -84,9 +93,8 @@ async function load(){
 
       <div class="body">${bodyFor(data)}</div>
 
-      <div class="signatures ${(data.metadata?.signer_mode||'both')==='both'?'two-signers':'one-signer'}">
-        ${(data.metadata?.signer_mode||'both')!=='managing_editor'?'<div class="signature"><b>Dr. Leonardo de Carvalho Vidal</b>Editor-in-Chief</div>':''}
-        ${(data.metadata?.signer_mode||'both')!=='editor_chief'?'<div class="signature"><b>Dr. Denise Stolle da Luz Weiss</b>Executive Editor</div>':''}
+      <div class="signatures ${signers.length===2?'two-signers':'one-signer'}">
+        ${signers.map(s=>'<div class="signature"><b>'+s.name+'</b>'+s.role+'</div>').join('')}
       </div>
 
       <div class="footer-meta">
