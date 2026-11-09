@@ -27,6 +27,11 @@ async function signed(path){
   if(error)throw error;
   return data.signedUrl;
 }
+async function signedCover(path){
+  const {data,error}=await supabase.storage.from('cover-sheets').createSignedUrl(path,900);
+  if(error)throw error;
+  return data.signedUrl;
+}
 function statusLabel(v){
   return ({submitted:'Aguardando editor',sent_to_reviewers:'Reencaminhada aos pareceristas',accepted:'Aceita'})[v]||v;
 }
@@ -50,7 +55,7 @@ async function decorateAuthor(){
   if(!panel)return;
 
   const [{data:subs,error:se},{data:revs,error:re}]=await Promise.all([
-    supabase.from('submissions').select('id,code,title,status,author_id').eq('author_id',user.id),
+    supabase.from('submissions').select('id,code,title,status,author_id,cover_sheet_path').eq('author_id',user.id),
     supabase.from('submission_revisions').select('*').order('round_no',{ascending:false})
   ]);
   if(se||re)return;
@@ -65,6 +70,22 @@ async function decorateAuthor(){
     const section=document.createElement('section');
     section.className='revision-flow-section author-revision-flow';
     let html='';
+
+    if(s.status==='revision_requested'){
+      const hasCover=!!s.cover_sheet_path;
+      html+=`<div class="revision-cover-sheet-box">
+        <span class="revision-badge">${hasCover?'FOLHA DE ROSTO REGISTRADA':'FOLHA DE ROSTO PENDENTE'}</span>
+        <h4>Folha de rosto da mesma submissão</h4>
+        <p>${hasCover?'A folha de rosto já está vinculada a esta submissão. Se precisar corrigir dados de autoria, você pode substituí-la abaixo; a versão anterior permanecerá registrada no histórico.':'Esta submissão ainda não possui folha de rosto. Envie agora o arquivo com nomes, afiliações, e-mails, ORCID e identificação do autor correspondente. O arquivo ficará vinculado a esta mesma submissão e não será mostrado aos pareceristas.'}</p>
+        ${hasCover?'<button class="btn cover-current-open" type="button">Abrir folha de rosto atual</button>':''}
+        <form class="cover-sheet-update-form portal-form">
+          <label>${hasCover?'Substituir folha de rosto (DOCX ou PDF · até 10 MB)':'Enviar folha de rosto (DOCX ou PDF · até 10 MB)'}
+            <input type="file" name="cover_sheet" accept=".docx,.pdf" ${hasCover?'':'required'}>
+          </label>
+          <button class="btn ${hasCover?'':'primary'}" type="submit">${hasCover?'Substituir folha de rosto':'Enviar folha de rosto pendente'}</button>
+        </form>
+      </div>`;
+    }
 
     if(s.status==='revision_requested'){
       if(pending){
@@ -114,6 +135,38 @@ async function decorateAuthor(){
       try{location.href=await signed(btn.dataset.path)}
       catch(e){notify('Não foi possível abrir o arquivo: '+e.message,'error')}
     });
+
+    const openCover=$('.cover-current-open',section);
+    if(openCover)openCover.onclick=async()=>{
+      try{location.href=await signedCover(s.cover_sheet_path)}
+      catch(e){notify('Não foi possível abrir a folha de rosto: '+e.message,'error')}
+    };
+
+    const coverForm=$('.cover-sheet-update-form',section);
+    if(coverForm)coverForm.onsubmit=async e=>{
+      e.preventDefault();
+      const fd=new FormData(coverForm),file=fd.get('cover_sheet');
+      if(!file?.size)return notify('Selecione a folha de rosto.','error');
+      if(file.size>10*1024*1024)return notify('A folha de rosto deve ter no máximo 10 MB.','error');
+      const ext=(file.name.split('.').pop()||'').toLowerCase();
+      if(!['pdf','docx'].includes(ext))return notify('A folha de rosto deve ser enviada em PDF ou DOCX.','error');
+      const btn=$('button[type="submit"]',coverForm);btn.disabled=true;btn.textContent='Enviando…';
+      let path=null;
+      try{
+        path=`${user.id}/${s.id}/cover-sheets/${crypto.randomUUID()}-${safe(file.name)}`;
+        const up=await supabase.storage.from('cover-sheets').upload(path,file,{upsert:false,contentType:file.type||undefined});
+        if(up.error)throw up.error;
+        const saved=await supabase.rpc('author_set_cover_sheet',{p_submission_id:s.id,p_cover_sheet_path:path});
+        if(saved.error)throw saved.error;
+        notify('Folha de rosto vinculada a esta submissão com sucesso.','ok');
+        await refresh();
+      }catch(err){
+        if(path)await supabase.storage.from('cover-sheets').remove([path]);
+        notify('Não foi possível salvar a folha de rosto: '+(err?.message||err),'error');
+      }finally{
+        btn.disabled=false;btn.textContent=s.cover_sheet_path?'Substituir folha de rosto':'Enviar folha de rosto pendente';
+      }
+    };
 
     const form=$('.revision-upload-form',section);
     if(form)form.onsubmit=async e=>{
