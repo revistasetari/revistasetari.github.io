@@ -29,7 +29,7 @@ function showPortalTab(scope,target,{scroll=false}={}){
     b.setAttribute('aria-selected',active?'true':'false');
   });
   const targetPage=pages.find(p=>p.dataset.tabPage===target);
-  // Scroll only for an explicit navigation command, never during automatic initialization.\n  if(scroll&&targetPage)targetPage.scrollIntoView({block:'start',behavior:'auto'});
+  // Scroll only following an explicit tab click.\n  if(scroll&&targetPage)requestAnimationFrame(()=>targetPage.scrollIntoView({block:'start',behavior:'instant'}));
   return !!targetPage;
 }
 document.addEventListener('click',async e=>{
