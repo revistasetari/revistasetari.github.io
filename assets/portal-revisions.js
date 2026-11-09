@@ -171,6 +171,9 @@ async function decorateAuthor(){
     const form=$('.revision-upload-form',section);
     if(form)form.onsubmit=async e=>{
       e.preventDefault();
+      if(!s.cover_sheet_path){
+        return notify('Antes de enviar a versão revisada, envie a folha de rosto nesta mesma submissão.','error');
+      }
       if(!confirm('Enviar esta versão revisada para a equipe editorial?'))return;
       const fd=new FormData(form),manuscript=fd.get('manuscript'),response=fd.get('response');
       if(!manuscript?.size||!response?.size)return notify('Envie os dois arquivos obrigatórios.','error');
