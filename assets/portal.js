@@ -295,12 +295,36 @@ async function loadEditorCertificates(){
           
         </select>
       </label>
+      ${o.certificate_type.startsWith('author_')?`<div class="collective-authors-editor" style="margin-top:12px;padding:12px;border:1px solid #c9dcde;border-radius:10px;background:#f6faf9"><label style="display:block;font-weight:800">Autores do artigo (ordem da folha de rosto)</label><textarea class="collective-authors-input" rows="3" style="display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:9px" placeholder="Um nome completo por linha"></textarea><button type="button" class="btn save-collective-authors-btn">Confirmar autores</button><small class="collective-authors-status" style="display:block;margin-top:5px">Confira os nomes na folha de rosto antes de confirmar.</small></div>` : ''}
       ${released?'<div class="certificate-mail-status '+(mailSent?'sent':mailFailed?'failed':'pending')+'">'+mailText+'</div>':''}
     </div>
     <div class="certificate-editor-actions">
       ${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}
       ${released?'<button class="btn open-certificate-btn" type="button">Abrir</button><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button><button class="btn delete-certificate-btn" type="button">Apagar certificado</button>':''}
     </div>`;
+
+    if(o.certificate_type.startsWith('author_')){
+      const editor=card.querySelector('.collective-authors-input');
+      const status=card.querySelector('.collective-authors-status');
+      const save=card.querySelector('.save-collective-authors-btn');
+      supabase.rpc('editor_get_certificate_authors',{p_submission_id:o.reference_id}).then(({data,error})=>{
+        if(error){status.textContent='Erro ao consultar autores: '+error.message;return;}
+        if(Array.isArray(data)&&data.length){editor.value=data.join('\\n');status.textContent='Autoria confirmada. Você pode corrigir e salvar novamente.';}
+      });
+      save.onclick=async()=>{
+        const names=editor.value.split(/\\r?\\n/).map(n=>n.trim()).filter(Boolean);
+        if(!names.length)return notice('Informe todos os autores, um por linha.','error');
+        if(!confirm('Confirmar '+names.length+' autor(es) na ordem da folha de rosto?'))return;
+        save.disabled=true;
+        try{
+          const {error}=await supabase.rpc('editor_set_certificate_authors',{p_submission_id:o.reference_id,p_authors:names});
+          if(error)throw error;
+          status.textContent='Autoria confirmada e certificados existentes atualizados.';
+          notice('Autores registrados para o certificado coletivo.');
+        }catch(err){notice('Erro ao registrar autores: '+err.message,'error')}
+        finally{save.disabled=false}
+      };
+    }
 
     const release=card.querySelector('.release-certificate-btn');
     if(release)release.onclick=async()=>{
