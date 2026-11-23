@@ -57,6 +57,17 @@ document.addEventListener('click',async e=>{
   const nav=btn.closest('.portal-subnav');
   if(!nav)return;
   const scope=nav.dataset.tabScope,target=btn.dataset.tabTarget;
+  // The overview card is a temporary shortcut, never a persistent submissions filter.
+  // Clicking the actual Submissões tab must restore the complete list.
+  if(scope==='editor'&&target==='submissions'){
+    editorSummaryFlowFilter='';
+    editorSummaryFlowLabel='';
+    const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
+    if(search)search.value='';
+    if(status)status.value='';
+    if(priority)priority.value='';
+    applyEditorSubmissionFilters();
+  }
   const opened=showPortalTab(scope,target,{scroll:true});
   if(!opened)return;
   if(scope==='editor'&&target==='users'&&currentProfile?.role==='editor_chief'){
