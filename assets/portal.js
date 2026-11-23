@@ -632,21 +632,30 @@ let editorSummaryFlowFilter='';
 let editorSummaryFlowLabel='';
 
 function openEditorSummaryBucket(flowKey,label){
-  editorSummaryFlowFilter=flowKey;
-  editorSummaryFlowLabel=label;
-  showPortalTab('editor','submissions');
-
+  // Use the same filtering controls and article cards as the Submissões tab.
+  // A shortcut must not permanently change the normal Submissões view.
   const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
   if(search)search.value='';
   if(status)status.value='';
   if(priority)priority.value='';
-
+  editorSummaryFlowFilter='';
+  editorSummaryFlowLabel='';
+  if(flowKey==='approved' && status)status.value='accepted';
+  else if(flowKey==='revision' && status)status.value='revision_requested';
+  else {
+    editorSummaryFlowFilter=flowKey;
+    editorSummaryFlowLabel=label;
+  }
+  showPortalTab('editor','submissions');
   applyEditorSubmissionFilters();
-  // Keep filtered results compact: expand only on explicit user command.
   document.querySelectorAll('#editor-submissions .editorial-card').forEach(card=>{
     card.classList.add('is-collapsed');
     const toggle=card.querySelector('.editor-card-toggle');
-    if(toggle){toggle.setAttribute('aria-expanded','false');const state=toggle.querySelector('.toggle-state');if(state)state.textContent='Abrir detalhes';}
+    if(toggle){
+      toggle.setAttribute('aria-expanded','false');
+      const state=toggle.querySelector('.toggle-state');
+      if(state)state.textContent='Abrir detalhes';
+    }
   });
 }
 
