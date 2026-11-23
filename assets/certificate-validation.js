@@ -37,8 +37,10 @@ async function verify(){
   }
 
   const m=data.metadata||{};
+  const articleCertificate=data.certificate_type==='author_acceptance'||data.certificate_type==='author_publication';
+  const authors=articleCertificate&&Array.isArray(m.authors)?m.authors.filter(name=>typeof name==='string'&&name.trim()):[];
   const details=[
-    ['Holder',m.holder_name],
+    [articleCertificate?'Authors':'Holder',authors.length?authors.join(' · '):m.holder_name],
     ['Institution',m.institution],
     ['Certificate type',labels[data.certificate_type]||data.certificate_type],
     ['Authentication code',data.certificate_code],
