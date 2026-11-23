@@ -309,10 +309,10 @@ async function loadEditorCertificates(){
       const save=card.querySelector('.save-collective-authors-btn');
       supabase.rpc('editor_get_certificate_authors',{p_submission_id:o.reference_id}).then(({data,error})=>{
         if(error){status.textContent='Erro ao consultar autores: '+error.message;return;}
-        if(Array.isArray(data)&&data.length){editor.value=data.join('\\n');status.textContent='Autoria confirmada. Você pode corrigir e salvar novamente.';}
+        if(Array.isArray(data)&&data.length){editor.value=data.join('\n');status.textContent='Autoria confirmada. Você pode corrigir e salvar novamente.';}
       });
       save.onclick=async()=>{
-        const names=editor.value.split(/\\r?\\n/).map(n=>n.trim()).filter(Boolean);
+        const names=editor.value.split(/\r?\n/).map(n=>n.trim()).filter(Boolean);
         if(!names.length)return notice('Informe todos os autores, um por linha.','error');
         if(!confirm('Confirmar '+names.length+' autor(es) na ordem da folha de rosto?'))return;
         save.disabled=true;
