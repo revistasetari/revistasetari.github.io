@@ -331,6 +331,11 @@ async function loadEditorCertificates(){
       if(!confirm('Liberar este certificado para '+(o.holder_name||'o usuário')+'?'))return;
       release.disabled=true;
       try{
+        if(o.certificate_type.startsWith('author_')){
+          const {data:authors,error:authorsError}=await supabase.rpc('editor_get_certificate_authors',{p_submission_id:o.reference_id});
+          if(authorsError)throw authorsError;
+          if(!Array.isArray(authors)||!authors.length)throw new Error('Confirme todos os autores da folha de rosto antes de liberar o certificado.');
+        }
         const signerMode=card.querySelector('.certificate-signer-select')?.value||'both';
         const {data:cert,error}=await supabase.rpc('editor_release_certificate_configured',{p_type:o.certificate_type,p_reference_id:o.reference_id,p_signer_mode:signerMode});
         if(error)throw error;
