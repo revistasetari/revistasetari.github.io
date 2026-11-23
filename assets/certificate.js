@@ -24,7 +24,8 @@ function titleFor(type){
 
 function bodyFor(data){
   const m=data.metadata||{};
-  const holder=esc(m.holder_name||'');
+  const authors=Array.isArray(m.authors)?m.authors.filter(x=>typeof x==='string'&&x.trim()):[];
+  const holder=authors.length?authors.map(esc).join(', '):esc(m.holder_name||'');
 
   if(data.certificate_type==='reviewer'){
     return `This is to certify that <strong>${holder}</strong>${m.institution?' ('+esc(m.institution)+')':''} is a <strong>Reviewer Board Member</strong> of <strong>SETARI — Science, Engineering, Technology, Applied Research &amp; Innovation</strong>, and contributed to the scientific peer-review process through a review activity completed on <strong>${esc(fmt(m.activity_date))}</strong>. In accordance with editorial confidentiality and the double-blind review process, this certificate does not disclose the title, authorship, submission code, or any other identifying information related to the manuscript reviewed.`;
@@ -70,7 +71,7 @@ async function load(){
     return;
   }
 
-  const holder=String(data.metadata?.holder_name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
+  const holder=([...(Array.isArray(data.metadata?.authors)?data.metadata.authors:[]),data.metadata?.holder_name||''].join(' ')).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
   const chief={name:'Dr. Leonardo de Carvalho Vidal',role:'Editor-in-Chief'};
   const executive={name:'Dra. Denise Stolle da Luz Weiss',role:'Executive Editor'};
   const mode=data.metadata?.signer_mode||'both';
