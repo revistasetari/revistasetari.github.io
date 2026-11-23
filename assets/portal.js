@@ -645,11 +645,13 @@ function renderEditorSummary(subs,assign,reviews){
   const awaiting=subs.filter(s=>s.status==='under_review'&&assign.some(a=>a.submission_id===s.id&&!a.completed_at)).length;
   const decisions=subs.filter(s=>{if(s.status!=='under_review')return false;const aa=assign.filter(a=>a.submission_id===s.id);return aa.length>0&&aa.every(a=>a.completed_at)}).length;
   const revisions=subs.filter(s=>s.status==='revision_requested').length;
+  const approved=subs.filter(s=>s.status==='accepted').length;
   const cards=[
     {key:'triage',count:triage,label:'Triagem / ação inicial',action:true},
     {key:'waiting',count:awaiting,label:'Aguardando pareceres'},
     {key:'decision',count:decisions,label:'Decisão pendente',action:true},
-    {key:'revision',count:revisions,label:'Aguardando autor'}
+    {key:'revision',count:revisions,label:'Aguardando autor'},
+    {key:'approved',count:approved,label:'Artigos aprovados'}
   ];
   $('#editor-summary').innerHTML=cards.map(x=>`<button type="button" class="summary-card summary-filter-card ${x.action?'action-card':''}" data-flow-key="${x.key}" data-flow-label="${esc(x.label)}" ${x.count===0?'disabled':''} aria-label="Abrir ${esc(x.label)}: ${x.count} artigo(s)"><b>${x.count}</b><span>${esc(x.label)}</span><small>${x.count===0?'Nenhum artigo':'Clique para ver'}</small></button>`).join('');
   document.querySelectorAll('#editor-summary .summary-filter-card').forEach(btn=>btn.onclick=()=>openEditorSummaryBucket(btn.dataset.flowKey,btn.dataset.flowLabel));
@@ -830,7 +832,7 @@ function applyEditorSubmissionFilters(){
     const okSearch=!search||String(card.dataset.search||'').includes(search);
     const okStatus=!status||card.dataset.status===status;
     const okPriority=!priority||card.dataset.priority===priority;
-    const okSummary=!editorSummaryFlowFilter||card.dataset.flowKey===editorSummaryFlowFilter;
+    const okSummary=!editorSummaryFlowFilter||(editorSummaryFlowFilter==='approved'?card.dataset.status==='accepted':card.dataset.flowKey===editorSummaryFlowFilter);
     const show=okSearch&&okStatus&&okPriority&&okSummary;
     card.hidden=!show;
     if(show)visible++;
