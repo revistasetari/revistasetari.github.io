@@ -631,12 +631,11 @@ function openEditorSummaryBucket(flowKey,label){
   if(priority)priority.value='';
 
   applyEditorSubmissionFilters();
-
-  requestAnimationFrame(()=>{
-    const box=$('#editor-submissions');
-    const first=box?.querySelector('.editorial-card:not([hidden])');
-    if(first)void 0;
-    else void 0;
+  // Keep filtered results compact: expand only on explicit user command.
+  document.querySelectorAll('#editor-submissions .editorial-card').forEach(card=>{
+    card.classList.add('is-collapsed');
+    const toggle=card.querySelector('.editor-card-toggle');
+    if(toggle){toggle.setAttribute('aria-expanded','false');const state=toggle.querySelector('.toggle-state');if(state)state.textContent='Abrir detalhes';}
   });
 }
 
@@ -1207,7 +1206,7 @@ async function renderEditorSubmissions(subs,assign,reviews,messages,communicatio
     div.dataset.priority=String(flow.priority||'');
     div.dataset.flowKey=flow.key||'';
 
-    const firstDetail=[...div.children].find(el=>el.matches('.submission-details'));
+    const firstDetail=[...div.children].find(el=>el.matches('.editor-next-actions')) || [...div.children].find(el=>el.matches('.submission-details'));
     if(firstDetail){
       const toggle=document.createElement('button');
       toggle.type='button';
