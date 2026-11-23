@@ -300,7 +300,7 @@ async function loadEditorCertificates(){
     </div>
     <div class="certificate-editor-actions">
       ${released?'<span class="status">LIBERADO</span>':'<button class="btn primary release-certificate-btn" type="button">Liberar certificado</button>'}
-      ${released?'<a class="btn" href="certificado.html?codigo='+encodeURIComponent(o.certificate_code)+'" target="_blank" rel="noopener noreferrer">Abrir certificado atualizado</a><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button><button class="btn delete-certificate-btn" type="button">Apagar certificado</button>':''}
+      ${released?'<a class="btn" href="certificado.html?codigo='+encodeURIComponent(o.certificate_code)+'&versao=coautores-2'+'" target="_blank" rel="noopener noreferrer">Abrir certificado atualizado</a><button class="btn primary email-certificate-btn" type="button">'+(mailSent?'Reenviar e-mail':'Enviar por e-mail')+'</button><button class="btn delete-certificate-btn" type="button">Apagar certificado</button>':''}
     </div>`;
 
     if(o.certificate_type.startsWith('author_')){
@@ -321,7 +321,7 @@ async function loadEditorCertificates(){
           if(error)throw error;
           status.textContent='Autoria confirmada e certificados existentes atualizados.';
           const heading=card.querySelector('h3');if(heading)heading.textContent=names.join(' · ')+' · '+(o.detail||'');
-          if(o.certificate_code)status.innerHTML='Autoria confirmada. <a href="certificado.html?codigo='+encodeURIComponent(o.certificate_code)+'" target="_blank" rel="noopener noreferrer">Abrir certificado atualizado com todos os autores</a>.';
+          if(o.certificate_code)status.innerHTML='Autoria confirmada. <a href="certificado.html?codigo='+encodeURIComponent(o.certificate_code)+'&versao=coautores-2'+'" target="_blank" rel="noopener noreferrer">Abrir certificado atualizado com todos os autores</a>.';
           notice('Autores registrados para o certificado coletivo.');
         }catch(err){notice('Erro ao registrar autores: '+err.message,'error')}
         finally{save.disabled=false}
