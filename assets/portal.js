@@ -309,7 +309,7 @@ async function loadEditorCertificates(){
       const save=card.querySelector('.save-collective-authors-btn');
       supabase.rpc('editor_get_certificate_authors',{p_submission_id:o.reference_id}).then(({data,error})=>{
         if(error){status.textContent='Erro ao consultar autores: '+error.message;return;}
-        if(Array.isArray(data)&&data.length){editor.value=data.join('\n');status.textContent='Autoria confirmada. Você pode corrigir e salvar novamente.';}
+        if(Array.isArray(data)&&data.length){editor.value=data.join('\n');status.textContent='Autoria confirmada. Você pode corrigir e salvar novamente.';const heading=card.querySelector('h3');if(heading)heading.textContent=data.join(' · ')+' · '+(o.detail||'');}
       });
       save.onclick=async()=>{
         const names=editor.value.split(/\r?\n/).map(n=>n.trim()).filter(Boolean);
@@ -320,6 +320,7 @@ async function loadEditorCertificates(){
           const {error}=await supabase.rpc('editor_set_certificate_authors',{p_submission_id:o.reference_id,p_authors:names});
           if(error)throw error;
           status.textContent='Autoria confirmada e certificados existentes atualizados.';
+          const heading=card.querySelector('h3');if(heading)heading.textContent=names.join(' · ')+' · '+(o.detail||'');
           if(o.certificate_code)status.innerHTML='Autoria confirmada. <a href="certificado.html?codigo='+encodeURIComponent(o.certificate_code)+'" target="_blank" rel="noopener noreferrer">Abrir certificado atualizado com todos os autores</a>.';
           notice('Autores registrados para o certificado coletivo.');
         }catch(err){notice('Erro ao registrar autores: '+err.message,'error')}
