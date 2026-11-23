@@ -632,20 +632,14 @@ let editorSummaryFlowFilter='';
 let editorSummaryFlowLabel='';
 
 function openEditorSummaryBucket(flowKey,label){
-  // Use the same filtering controls and article cards as the Submissões tab.
-  // A shortcut must not permanently change the normal Submissões view.
+  // Reuse the exact same status dropdown and filtering engine as Submissões.
   const search=$('#submission-search'),status=$('#submission-status-filter'),priority=$('#submission-priority-filter');
-  if(search)search.value='';
-  if(status)status.value='';
-  if(priority)priority.value='';
   editorSummaryFlowFilter='';
   editorSummaryFlowLabel='';
-  if(flowKey==='approved' && status)status.value='accepted';
-  else if(flowKey==='revision' && status)status.value='revision_requested';
-  else {
-    editorSummaryFlowFilter=flowKey;
-    editorSummaryFlowLabel=label;
-  }
+  if(search)search.value='';
+  if(priority)priority.value='';
+  const statusByBucket={approved:'accepted',revision:'revision_requested',waiting:'workflow_waiting',decision:'workflow_decision',triage:'workflow_triage'};
+  if(status)status.value=statusByBucket[flowKey]||'';
   showPortalTab('editor','submissions');
   applyEditorSubmissionFilters();
   document.querySelectorAll('#editor-submissions .editorial-card').forEach(card=>{
@@ -661,8 +655,8 @@ function openEditorSummaryBucket(flowKey,label){
 
 function renderEditorSummary(subs,assign,reviews){
   const triage=subs.filter(s=>s.status==='submitted'||s.status==='under_screening').length;
-  const awaiting=subs.filter(s=>s.status==='under_review'&&assign.some(a=>a.submission_id===s.id&&!a.completed_at)).length;
-  const decisions=subs.filter(s=>{if(s.status!=='under_review')return false;const aa=assign.filter(a=>a.submission_id===s.id);return aa.length>0&&aa.every(a=>a.completed_at)}).length;
+  const awaiting=subs.filter(s=>{const aa=assign.filter(a=>a.submission_id===s.id);const rr=reviews.filter(r=>aa.some(a=>a.id===r.assignment_id));return editorWorkflowState(s,aa,rr).key==='waiting'}).length;
+  const decisions=subs.filter(s=>{const aa=assign.filter(a=>a.submission_id===s.id);const rr=reviews.filter(r=>aa.some(a=>a.id===r.assignment_id));return editorWorkflowState(s,aa,rr).key==='decision'}).length;
   const revisions=subs.filter(s=>s.status==='revision_requested').length;
   const approved=subs.filter(s=>s.status==='accepted').length;
   const cards=[
@@ -849,9 +843,9 @@ function applyEditorSubmissionFilters(){
   box.querySelectorAll('.editorial-card').forEach(card=>{
     total++;
     const okSearch=!search||String(card.dataset.search||'').includes(search);
-    const okStatus=!status||card.dataset.status===status;
+    const okStatus=!status||(status.startsWith('workflow_')?card.dataset.flowKey===status.slice(9):card.dataset.status===status);
     const okPriority=!priority||card.dataset.priority===priority;
-    const okSummary=!editorSummaryFlowFilter||(editorSummaryFlowFilter==='approved'?card.dataset.status==='accepted':card.dataset.flowKey===editorSummaryFlowFilter);
+    const okSummary=!editorSummaryFlowFilter||card.dataset.flowKey===editorSummaryFlowFilter;
     const show=okSearch&&okStatus&&okPriority&&okSummary;
     card.hidden=!show;
     if(show)visible++;
