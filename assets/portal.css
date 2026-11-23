@@ -453,3 +453,8 @@
 #editor-submissions .editorial-card[hidden]{display:none!important}
 @media(max-width:1100px){#editor-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){#editor-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Restore compact submissions: article details stay closed until explicitly expanded. */
+#editor-submissions .editorial-card.is-collapsed > .editor-card-collapsible{display:none!important}
+#editor-submissions .editorial-card:not(.is-collapsed) > .editor-card-collapsible{display:block}
+#editor-submissions .editorial-card .editor-card-toggle{display:flex!important;cursor:pointer}
