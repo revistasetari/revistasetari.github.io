@@ -29,18 +29,24 @@ function showPortalTab(scope,target,{scroll=false}={}){
     b.setAttribute('aria-selected',active?'true':'false');
   });
   const targetPage=pages.find(p=>p.dataset.tabPage===target);
-  // A user click is an explicit navigation request: bring the chosen section into view.
-  // Programmatic refreshes still do not scroll.
+  // Keep navigation predictable even when the browser restores scroll anchoring.
+  // All tab pages share the same content area; scroll to its start, not to a
+  // page position that may be stale while hidden panels are being switched.
   if(targetPage && scroll){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const scrollToSelectedTab=()=>{
       if(targetPage.hidden)return;
-      const nav=root.querySelector('.portal-subnav');
-      const stickyHeight=nav?.getBoundingClientRect().height||0;
       const toolbar=document.querySelector('#app-view .portal-toolbar');
+      const nav=root.querySelector('.portal-subnav');
       const toolbarHeight=toolbar?.getBoundingClientRect().height||0;
-      const top=Math.max(0,window.scrollY+targetPage.getBoundingClientRect().top-stickyHeight-toolbarHeight-24);
-      window.scrollTo({top,behavior:'instant'});
-    }));
+      const navHeight=nav?.getBoundingClientRect().height||0;
+      const offset=toolbarHeight+navHeight+28;
+      const top=Math.max(0,window.scrollY+targetPage.getBoundingClientRect().top-offset);
+      window.scrollTo({top,behavior:'auto'});
+    };
+    requestAnimationFrame(()=>{
+      scrollToSelectedTab();
+      requestAnimationFrame(scrollToSelectedTab);
+    });
   }
   return !!targetPage;
 }
