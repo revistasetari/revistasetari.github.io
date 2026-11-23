@@ -296,6 +296,7 @@ async function loadEditorCertificates(){
         </select>
       </label>
       ${o.certificate_type.startsWith('author_')?`<div class="collective-authors-editor" style="margin-top:12px;padding:12px;border:1px solid #c9dcde;border-radius:10px;background:#f6faf9"><label style="display:block;font-weight:800">Autores do artigo (ordem da folha de rosto)</label><textarea class="collective-authors-input" rows="3" style="display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:9px" placeholder="Um nome completo por linha"></textarea><button type="button" class="btn save-collective-authors-btn">Confirmar autores</button><small class="collective-authors-status" style="display:block;margin-top:5px">Confira os nomes na folha de rosto antes de confirmar.</small></div>` : ''}
+      ${o.certificate_type.startsWith('author_')?`<div class="certificate-title-editor" style="margin-top:12px;padding:12px;border:1px solid #c9dcde;border-radius:10px;background:#f6faf9"><label style="display:block;font-weight:800">Título do artigo (editável para o certificado)</label><textarea class="certificate-title-input" rows="2" style="display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:9px" placeholder="Título completo do artigo"></textarea><button type="button" class="btn save-certificate-title-btn">Confirmar título</button><small class="certificate-title-status" style="display:block;margin-top:5px">Confira o título antes de confirmar.</small></div>` : ''}
       ${released?'<div class="certificate-mail-status '+(mailSent?'sent':mailFailed?'failed':'pending')+'">'+mailText+'</div>':''}
     </div>
     <div class="certificate-editor-actions">
@@ -325,6 +326,33 @@ async function loadEditorCertificates(){
           notice('Autores registrados para o certificado coletivo.');
         }catch(err){notice('Erro ao registrar autores: '+err.message,'error')}
         finally{save.disabled=false}
+      };
+    }
+
+    if(o.certificate_type.startsWith('author_')){
+      const titleInput=card.querySelector('.certificate-title-input');
+      const titleStatus=card.querySelector('.certificate-title-status');
+      const titleSave=card.querySelector('.save-certificate-title-btn');
+      const originalTitle=(o.detail||'').replace(/^[^·]*·\s*/, '').trim();
+      titleInput.value=originalTitle;
+      supabase.rpc('editor_get_certificate_title',{p_submission_id:o.reference_id}).then(({data,error})=>{
+        if(error){titleStatus.textContent='Erro ao consultar título: '+error.message;return;}
+        if(data){titleInput.value=data;titleStatus.textContent='Título carregado. Você pode corrigir e confirmar.';}
+      });
+      titleSave.onclick=async()=>{
+        const title=titleInput.value.trim();
+        if(title.length<3)return notice('Informe o título completo do artigo.','error');
+        if(!confirm('Confirmar este título para o certificado?'))return;
+        titleSave.disabled=true;
+        try{
+          const {error}=await supabase.rpc('editor_set_certificate_title',{p_submission_id:o.reference_id,p_title:title});
+          if(error)throw error;
+          titleStatus.textContent='Título confirmado. Certificados existentes e validação atualizados.';
+          const heading=card.querySelector('h3');
+          if(heading){const before=heading.textContent.split(' · ');heading.textContent=before.slice(0,-1).join(' · ')+' · '+(o.detail||'').split(' · ')[0]+' · '+title;}
+          notice('Título registrado para o certificado.');
+        }catch(err){notice('Erro ao registrar título: '+err.message,'error');}
+        finally{titleSave.disabled=false;}
       };
     }
 
