@@ -440,3 +440,9 @@
 .certificate-signer-control{display:grid;gap:.32rem;margin-top:.6rem;font-size:.72rem;font-weight:900;color:#315d64;max-width:310px}
 .certificate-signer-control select{width:100%;border:1px solid #cbdada;border-radius:9px;padding:.58rem .68rem;background:#fff;color:#173b40;font:inherit}
 .certificate-signer-control select:focus{outline:2px solid rgba(12,105,116,.18);border-color:#0c6974}
+
+/* SETARI: keep inactive tab panels truly hidden, including panels with display rules. */
+#app-view [data-tab-page][hidden],
+#app-view [data-tab-page][hidden] * { display:none !important; }
+/* Prevent scroll anchoring from repositioning the viewport when a long tab is replaced. */
+#editor-panel, #editor-panel .portal-subnav, #editor-panel [data-tab-page] { overflow-anchor:none; }
